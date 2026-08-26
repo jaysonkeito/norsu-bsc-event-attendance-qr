@@ -1,0 +1,338 @@
+{% extends 'qrapp/base.html' %}
+{% load static %}
+
+{% block title %}Manage Events | QR Attendance System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-content">
+        <h2>Manage Events</h2>
+        <p>Create sessions/events and set which one the scanner records attendance for</p>
+    </div>
+    <div class="header-actions">
+        <button class="btn btn-primary" onclick="openAddModal()">
+            <i class="fas fa-plus"></i> Add Event
+        </button>
+    </div>
+</div>
+
+{% if messages %}
+<div class="messages-container mb-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+        <button type="button" class="alert-close" onclick="this.parentElement.remove()">×</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-calendar-alt"></i> Event List</h3>
+        <span class="badge badge-info" style="padding: 8px 16px; font-size: 14px;">
+            Total: {{ events.count }}
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table id="eventsTable">
+                <thead>
+                    <tr>
+                        <th>Picture</th>
+                        <th>Event</th>
+                        <th>Date / Time</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                        <th>Scans</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in events %}
+                    <tr>
+                        <td>
+                            {% if event.picture %}
+                            <img src="{{ event.picture.url }}" alt="{{ event.title }}"
+                                 style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #e9ecef;">
+                            {% else %}
+                            <span style="color:#adb5bd;font-size:12px;">No photo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ event.title }}</strong>
+                            {% if event.is_current %}
+                            <span class="badge badge-primary" style="margin-left:6px;">Current</span>
+                            {% endif %}
+                            {% if event.description %}
+                            <div style="color:#6c757d;font-size:12px;margin-top:4px;">{{ event.description|truncatechars:80 }}</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ event.display_window }}</td>
+                        <td>{{ event.location|default:"—" }}</td>
+                        <td>
+                            {% if event.is_active %}
+                            <span class="badge badge-success">Active</span>
+                            {% else %}
+                            <span class="badge badge-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="scan-count" data-event-id="{{ event.id }}">—</td>
+                        <td>
+                            {% if not event.is_current %}
+                            <form method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="set_current">
+                                <input type="hidden" name="event_id" value="{{ event.id }}">
+                                <button type="submit" class="btn btn-success btn-sm" title="Use this event on scanner">
+                                    <i class="fas fa-play"></i> Set Current
+                                </button>
+                            </form>
+                            {% endif %}
+                            <button class="btn btn-warning btn-sm"
+                                    onclick="openEditModal(
+                                        '{{ event.id }}',
+                                        '{{ event.title|escapejs }}',
+                                        '{{ event.description|escapejs }}',
+                                        '{{ event.event_date|date:"Y-m-d" }}',
+                                        '{{ event.start_time|time:"H:i"|default:"" }}',
+                                        '{{ event.end_time|time:"H:i"|default:"" }}',
+                                        '{{ event.location|escapejs }}',
+                                        {{ event.is_active|yesno:"true,false" }},
+                                        {{ event.is_current|yesno:"true,false" }},
+                                        '{% if event.picture %}{{ event.picture.url|escapejs }}{% endif %}'
+                                    )">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn btn-danger btn-sm"
+                                    onclick="openDeleteModal('{{ event.id }}', '{{ event.title|escapejs }}')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">No events yet. Click "Add Event" to create one.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Event Modal -->
+<div id="addEventModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus"></i> Add Event</h3>
+            <button class="modal-close" onclick="closeModal('addEventModal')">&times;</button>
+        </div>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="addTitle">Event Title *</label>
+                    <input type="text" id="addTitle" name="title" class="form-control"
+                           placeholder="e.g., Morning Assembly, Flag Ceremony" required maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label for="addDescription">Description</label>
+                    <textarea id="addDescription" name="description" class="form-control" rows="2"
+                              placeholder="Optional notes"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="addPicture">Event Picture</label>
+                    <input type="file" id="addPicture" name="picture" class="form-control" accept="image/*">
+                    <small style="color:#6c757d;">Shown on the scanner so staff know which attendance they are taking.</small>
+                </div>
+                <div class="form-group">
+                    <label for="addDate">Event Date *</label>
+                    <input type="date" id="addDate" name="event_date" class="form-control" value="{{ today }}" required>
+                </div>
+                <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                        <label for="addStart">Start Time</label>
+                        <input type="time" id="addStart" name="start_time" class="form-control">
+                    </div>
+                    <div>
+                        <label for="addEnd">End Time</label>
+                        <input type="time" id="addEnd" name="end_time" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="addLocation">Location</label>
+                    <input type="text" id="addLocation" name="location" class="form-control"
+                           placeholder="e.g., Gymnasium / Main Gate" maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="is_current">
+                        Set as current scanning event
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addEventModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Event</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Event Modal -->
+<div id="editEventModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Edit Event</h3>
+            <button class="modal-close" onclick="closeModal('editEventModal')">&times;</button>
+        </div>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" id="editEventId" name="event_id">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editTitle">Event Title *</label>
+                    <input type="text" id="editTitle" name="title" class="form-control" required maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label for="editDescription">Description</label>
+                    <textarea id="editDescription" name="description" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editPicture">Event Picture</label>
+                    <div id="editPicturePreviewWrap" style="display:none;margin-bottom:8px;">
+                        <img id="editPicturePreview" src="" alt="Current picture"
+                             style="width:96px;height:96px;object-fit:cover;border-radius:8px;border:1px solid #e9ecef;">
+                    </div>
+                    <input type="file" id="editPicture" name="picture" class="form-control" accept="image/*">
+                    <label style="display:block;margin-top:8px;">
+                        <input type="checkbox" id="editClearPicture" name="clear_picture">
+                        Remove current picture
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label for="editDate">Event Date *</label>
+                    <input type="date" id="editDate" name="event_date" class="form-control" required>
+                </div>
+                <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                        <label for="editStart">Start Time</label>
+                        <input type="time" id="editStart" name="start_time" class="form-control">
+                    </div>
+                    <div>
+                        <label for="editEnd">End Time</label>
+                        <input type="time" id="editEnd" name="end_time" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editLocation">Location</label>
+                    <input type="text" id="editLocation" name="location" class="form-control" maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="editIsActive" name="is_active"> Active</label>
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="editIsCurrent" name="is_current"> Current scanning event</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editEventModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteEventModal" class="modal">
+    <div class="modal-content modal-sm">
+        <div class="modal-header">
+            <h3><i class="fas fa-exclamation-triangle" style="color:#dc3545;"></i> Delete Event</h3>
+            <button type="button" class="modal-close" onclick="closeModal('deleteEventModal')">&times;</button>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" id="deleteEventId" name="event_id">
+            <div class="modal-body" style="text-align:center;padding:28px 24px;">
+                <div style="width:56px;height:56px;margin:0 auto 16px;border-radius:50%;background:rgba(220,53,69,0.1);display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-trash" style="font-size:22px;color:#dc3545;"></i>
+                </div>
+                <p style="font-size:16px;margin:0 0 8px;color:#212529;line-height:1.4;">
+                    Delete <strong id="deleteEventTitle"></strong>?
+                </p>
+                <p style="color:#6c757d;font-size:13px;margin:0;line-height:1.45;">
+                    Related attendance scans will be unlinked from this event (not deleted).
+                </p>
+            </div>
+            <div class="modal-footer" style="justify-content:center;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('deleteEventModal')">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Delete Event
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const eventStats = {{ event_stats|safe }};
+
+function openModal(id) {
+    document.getElementById(id).classList.add('active');
+}
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+function openAddModal() {
+    openModal('addEventModal');
+}
+function openEditModal(id, title, description, date, start, end, location, isActive, isCurrent, pictureUrl) {
+    document.getElementById('editEventId').value = id;
+    document.getElementById('editTitle').value = title;
+    document.getElementById('editDescription').value = description || '';
+    document.getElementById('editDate').value = date;
+    document.getElementById('editStart').value = start || '';
+    document.getElementById('editEnd').value = end || '';
+    document.getElementById('editLocation').value = location || '';
+    document.getElementById('editIsActive').checked = !!isActive;
+    document.getElementById('editIsCurrent').checked = !!isCurrent;
+    document.getElementById('editPicture').value = '';
+    document.getElementById('editClearPicture').checked = false;
+    const previewWrap = document.getElementById('editPicturePreviewWrap');
+    const preview = document.getElementById('editPicturePreview');
+    if (pictureUrl) {
+        preview.src = pictureUrl;
+        previewWrap.style.display = 'block';
+    } else {
+        preview.src = '';
+        previewWrap.style.display = 'none';
+    }
+    openModal('editEventModal');
+}
+function openDeleteModal(id, title) {
+    document.getElementById('deleteEventId').value = id;
+    document.getElementById('deleteEventTitle').textContent = title;
+    openModal('deleteEventModal');
+}
+
+document.querySelectorAll('.scan-count').forEach(el => {
+    const id = el.dataset.eventId;
+    el.textContent = eventStats[id] ?? 0;
+});
+
+window.addEventListener('click', (e) => {
+    ['addEventModal', 'editEventModal', 'deleteEventModal'].forEach(id => {
+        const modal = document.getElementById(id);
+        if (e.target === modal) closeModal(id);
+    });
+});
+</script>
+{% endblock %}

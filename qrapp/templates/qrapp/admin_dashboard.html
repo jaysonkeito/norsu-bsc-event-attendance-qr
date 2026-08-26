@@ -1,0 +1,2018 @@
+{% extends 'qrapp/base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard | QR Attendance System{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="header-content">
+        <h2>Admin Dashboard</h2>
+        <p>Event attendance analytics and management</p>
+    </div>
+    <div class="header-actions">
+        <span class="badge badge-info">{{ today|date:"M d, Y" }}</span>
+    </div>
+</div>
+
+<!-- Dashboard-only: Calendar + Analytics -->
+<div id="globalStats">
+    {% include 'qrapp/partials/live_calendar.html' %}
+
+    <div class="analytics-panel mb-3" id="eventAnalytics">
+        <div class="analytics-header">
+            <div>
+                <h3><i class="fas fa-chart-pie"></i> Event Analytics</h3>
+                <p class="analytics-subtitle">Snapshot for <strong id="analyticsEventLabel">{{ event_label }}</strong></p>
+            </div>
+            <div class="attendance-rate-chip" title="Attendance rate">
+                <span class="rate-value" id="attendanceRate">{{ analytics.attendance_rate }}%</span>
+                <span class="rate-label">Rate</span>
+            </div>
+        </div>
+
+        <div class="stats-grid analytics-metrics">
+            <div class="stat-card stat-info">
+                <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+                <div class="stat-body">
+                    <div class="stat-label">Expected</div>
+                    <div class="stat-value" id="expectedCount">{{ analytics.expected }}</div>
+                </div>
+            </div>
+            <div class="stat-card stat-success">
+                <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+                <div class="stat-body">
+                    <div class="stat-label">Attended</div>
+                    <div class="stat-value" id="attendedCount">{{ analytics.attended }}</div>
+                </div>
+            </div>
+            <div class="stat-card stat-danger">
+                <div class="stat-icon"><i class="fas fa-user-times"></i></div>
+                <div class="stat-body">
+                    <div class="stat-label">Absent</div>
+                    <div class="stat-value" id="absentCount">{{ analytics.absent }}</div>
+                </div>
+            </div>
+            <div class="stat-card stat-warning">
+                <div class="stat-icon"><i class="fas fa-door-open"></i></div>
+                <div class="stat-body">
+                    <div class="stat-label">On Site</div>
+                    <div class="stat-value" id="presentInCount">{{ analytics.still_inside }}</div>
+                </div>
+            </div>
+            <div class="stat-card stat-primary">
+                <div class="stat-icon"><i class="fas fa-flag-checkered"></i></div>
+                <div class="stat-body">
+                    <div class="stat-label">Completed</div>
+                    <div class="stat-value" id="presentOutCount">{{ analytics.completed }}</div>
+                </div>
+            </div>
+            <div class="stat-card stat-info">
+                <div class="stat-icon"><i class="fas fa-qrcode"></i></div>
+                <div class="stat-body">
+                    <div class="stat-label">Scans</div>
+                    <div class="stat-value" id="totalScansCount">{{ analytics.total_scans }}</div>
+                    <div class="stat-hint">{{ analytics.total_in_scans }} IN · {{ analytics.total_out_scans }} OUT</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="analytics-meta-grid">
+            <div class="meta-card">
+                <div class="meta-label"><i class="fas fa-play"></i> First Check-in</div>
+                <div class="meta-value" id="firstCheckin">{{ analytics.first_checkin }}</div>
+            </div>
+            <div class="meta-card">
+                <div class="meta-label"><i class="fas fa-stopwatch"></i> Last Activity</div>
+                <div class="meta-value" id="lastActivity">{{ analytics.last_activity }}</div>
+            </div>
+            <div class="meta-card">
+                <div class="meta-label"><i class="fas fa-bolt"></i> Peak Hour</div>
+                <div class="meta-value" id="peakHour">{{ analytics.peak_hour }}</div>
+                <div class="meta-hint" id="peakHourCount">{% if analytics.peak_hour_count %}{{ analytics.peak_hour_count }} check-ins{% else %}No check-ins yet{% endif %}</div>
+            </div>
+            <div class="meta-card">
+                <div class="meta-label"><i class="fas fa-percentage"></i> Exit Completion</div>
+                <div class="meta-value" id="completionRate">{{ analytics.completion_rate }}%</div>
+            </div>
+        </div>
+
+        <details class="analytics-details">
+            <summary>More breakdowns</summary>
+            <div class="analytics-breakdowns">
+                <div class="breakdown-card">
+                    <h4><i class="fas fa-university"></i> By College</h4>
+                    <div id="collegeBreakdown">
+                        {% for row in analytics.college_breakdown %}
+                        <div class="breakdown-row">
+                            <div class="breakdown-top">
+                                <span>{{ row.label }}</span>
+                                <span>{{ row.count }} <small>({{ row.percent }}%)</small></span>
+                            </div>
+                            <div class="breakdown-bar"><span style="width: {{ row.bar }}%;"></span></div>
+                        </div>
+                        {% empty %}
+                        <p class="breakdown-empty">No attendance data yet</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="breakdown-card">
+                    <h4><i class="fas fa-layer-group"></i> By Year Level</h4>
+                    <div id="yearBreakdown">
+                        {% for row in analytics.year_breakdown %}
+                        <div class="breakdown-row">
+                            <div class="breakdown-top">
+                                <span>{{ row.label }}</span>
+                                <span>{{ row.count }} <small>({{ row.percent }}%)</small></span>
+                            </div>
+                            <div class="breakdown-bar"><span style="width: {{ row.bar }}%;"></span></div>
+                        </div>
+                        {% empty %}
+                        <p class="breakdown-empty">No attendance data yet</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="breakdown-card">
+                    <h4><i class="fas fa-venus-mars"></i> By Gender</h4>
+                    <div id="sexBreakdown" class="sex-breakdown">
+                        {% for row in analytics.sex_breakdown %}
+                        <div class="sex-chip">
+                            <strong>{{ row.count }}</strong>
+                            <span>{{ row.label }}</span>
+                            <small>{{ row.percent }}%</small>
+                        </div>
+                        {% empty %}
+                        <p class="breakdown-empty">No attendance data yet</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </details>
+    </div>
+</div>
+
+<!-- Dashboard Tab -->
+<div id="dashboard" class="tabs active">
+    <!-- Dashboard filters: scan/attendance focused -->
+    <div class="card mb-3 filter-section" data-for="dashboard">
+        <div class="card-header">
+            <h3><i class="fas fa-filter"></i> Attendance Filters</h3>
+            <button type="button" class="btn btn-secondary btn-sm clear-filters-btn">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="filter-grid">
+                <div class="form-group">
+                    <label for="dashboardYear">Year Level</label>
+                    <select id="dashboardYear" class="form-control filter-control" data-filter="year">
+                        <option value="">All Years</option>
+                        <option value="1">Year 1</option>
+                        <option value="2">Year 2</option>
+                        <option value="3">Year 3</option>
+                        <option value="4">Year 4</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dashboardCollege">College</label>
+                    <select id="dashboardCollege" class="form-control filter-control filter-college" data-filter="college" data-program-target="dashboardProgram">
+                        <option value="">All Colleges</option>
+                        {% for college in unique_colleges %}
+                        <option value="{{ college }}">{{ college }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dashboardProgram">Program</label>
+                    <select id="dashboardProgram" class="form-control filter-control" data-filter="program">
+                        <option value="">All Programs</option>
+                        {% for program in unique_programs %}
+                        <option value="{{ program }}">{{ program }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dashboardStatus">Scan Status</label>
+                    <select id="dashboardStatus" class="form-control filter-control" data-filter="status">
+                        <option value="">All Scans</option>
+                        <option value="in">Checked In</option>
+                        <option value="out">Checked Out</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dashboardDate">Date</label>
+                    <input type="date" id="dashboardDate" class="form-control filter-control" data-filter="date">
+                </div>
+                <div class="form-group">
+                    <label for="dashboardSearch">Search</label>
+                    <input type="text" id="dashboardSearch" class="form-control filter-control filter-search"
+                           data-filter="search" placeholder="Search by name or ID...">
+                </div>
+            </div>
+            <details class="mt-2">
+                <summary class="advanced-filters-summary">
+                    <i class="fas fa-cog"></i> Time Window
+                </summary>
+                <div class="filter-grid mt-2">
+                    <div class="form-group">
+                        <label for="dashboardStartTime">Start Time</label>
+                        <input type="time" id="dashboardStartTime" class="form-control filter-control" data-filter="startTime">
+                    </div>
+                    <div class="form-group">
+                        <label for="dashboardEndTime">End Time</label>
+                        <input type="time" id="dashboardEndTime" class="form-control filter-control" data-filter="endTime">
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-calendar-check"></i> Today's Attendance</h3>
+            <div class="card-actions">
+                <button type="button" class="btn btn-secondary btn-sm" data-export="dashboardTable">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-container">
+                <table id="dashboardTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>College</th>
+                            <th>Program</th>
+                            <th>Year</th>
+                            <th>Section</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboardTableBody">
+                        {% for record in scanned_records %}
+                        <tr>
+                            <td>{{ record.student.student_id }}</td>
+                            <td>{{ record.student.name }}</td>
+                            <td>{{ record.student.college_code }}</td>
+                            <td>{{ record.student.program_code }}</td>
+                            <td>{{ record.student.year }}</td>
+                            <td>{{ record.student.section }}</td>
+                            <td>
+                                <span class="badge badge-{% if record.status == 'IN' %}info{% else %}warning{% endif %}">
+                                    {{ record.status }}
+                                </span>
+                            </td>
+                            <td>{{ record.timestamp|date:"d/m/Y" }}</td>
+                            <td>{{ record.timestamp|date:"h:i A" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center">No attendance records found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer">
+                <div class="pagination-container" id="dashboardPagination">
+                    <div class="pagination-info">Showing 1-10 of {{ scanned_records|length }} records</div>
+                    <div class="pagination-controls">
+                        <button class="btn btn-sm" disabled>
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </button>
+                        <span class="pagination-page">Page 1 of 1</span>
+                        <button class="btn btn-sm" disabled>
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Students Tab -->
+<div id="students" class="tabs">
+    <!-- Students filters: roster only (no attendance status/date) -->
+    <div class="card mb-3 filter-section" data-for="students">
+        <div class="card-header">
+            <h3><i class="fas fa-filter"></i> Student Filters</h3>
+            <button type="button" class="btn btn-secondary btn-sm clear-filters-btn">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="filter-grid">
+                <div class="form-group">
+                    <label for="studentsYear">Year Level</label>
+                    <select id="studentsYear" class="form-control filter-control" data-filter="year">
+                        <option value="">All Years</option>
+                        <option value="1">Year 1</option>
+                        <option value="2">Year 2</option>
+                        <option value="3">Year 3</option>
+                        <option value="4">Year 4</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="studentsCollege">College</label>
+                    <select id="studentsCollege" class="form-control filter-control filter-college" data-filter="college" data-program-target="studentsProgram">
+                        <option value="">All Colleges</option>
+                        {% for college in unique_colleges %}
+                        <option value="{{ college }}">{{ college }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="studentsProgram">Program</label>
+                    <select id="studentsProgram" class="form-control filter-control" data-filter="program">
+                        <option value="">All Programs</option>
+                        {% for program in unique_programs %}
+                        <option value="{{ program }}">{{ program }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="studentsSearch">Search</label>
+                    <input type="text" id="studentsSearch" class="form-control filter-control filter-search"
+                           data-filter="search" placeholder="Search by name or ID...">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-users"></i> Student List</h3>
+            <div class="card-actions-split">
+                <div class="actions-primary">
+                    <button type="button" class="btn btn-success btn-sm" onclick="openModal('addStudentModal')">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                    <button type="button" class="btn btn-info btn-sm" onclick="openModal('uploadStudentsModal')">
+                        <i class="fas fa-upload"></i> Import Students
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="openQrCodesModal()">
+                        <i class="fas fa-qrcode"></i> QR Codes
+                    </button>
+                </div>
+                <div class="actions-secondary">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openExportStudentsModal()">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <a href="{% url 'delete_all_qr' %}" class="btn btn-danger btn-sm" onclick="return confirm('Delete ALL students and QR codes? This action cannot be undone!');">
+                        <i class="fas fa-trash"></i> Delete All
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-container">
+                <table id="studentsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>College</th>
+                            <th>Program</th>
+                            <th>Year</th>
+                            <th>Section</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody">
+                        {% for data in student_report_data %}
+                        <tr>
+                            <td>{{ data.student.student_id }}</td>
+                            <td>{{ data.student.name }}</td>
+                            <td>{{ data.student.college_code }}</td>
+                            <td>{{ data.student.program_code }}</td>
+                            <td>{{ data.student.year }}</td>
+                            <td>{{ data.student.section }}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button type="button" class="btn btn-warning btn-sm" onclick="openEditStudentModal({{ data.student.id }}, '{{ data.student.student_id }}', '{{ data.student.name }}', '{{ data.student.sex }}', '{{ data.student.college_code }}', '{{ data.student.program_code }}', {{ data.student.year }}, '{{ data.student.section }}')">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <a href="{% url 'delete_student' data.student.id %}" class="btn btn-danger btn-sm"
+                                       onclick="return confirm('Delete this student?');">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No students found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer">
+                <div class="pagination-container" id="studentsPagination">
+                    <div class="pagination-info">Showing 1-10 of {{ student_report_data|length }} records</div>
+                    <div class="pagination-controls">
+                        <button class="btn btn-sm" disabled>
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </button>
+                        <span class="pagination-page">Page 1 of 1</span>
+                        <button class="btn btn-sm" disabled>
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reports Tab -->
+<div id="reports" class="tabs">
+    <!-- Reports filters: attendance report + date range -->
+    <div class="card mb-3 filter-section" data-for="reports">
+        <div class="card-header">
+            <h3><i class="fas fa-filter"></i> Report Filters</h3>
+            <button type="button" class="btn btn-secondary btn-sm clear-filters-btn">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="filter-grid">
+                <div class="form-group">
+                    <label for="reportsYear">Year Level</label>
+                    <select id="reportsYear" class="form-control filter-control" data-filter="year">
+                        <option value="">All Years</option>
+                        <option value="1">Year 1</option>
+                        <option value="2">Year 2</option>
+                        <option value="3">Year 3</option>
+                        <option value="4">Year 4</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reportsCollege">College</label>
+                    <select id="reportsCollege" class="form-control filter-control filter-college" data-filter="college" data-program-target="reportsProgram">
+                        <option value="">All Colleges</option>
+                        {% for college in unique_colleges %}
+                        <option value="{{ college }}">{{ college }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reportsProgram">Program</label>
+                    <select id="reportsProgram" class="form-control filter-control" data-filter="program">
+                        <option value="">All Programs</option>
+                        {% for program in unique_programs %}
+                        <option value="{{ program }}">{{ program }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reportsStatus">Attendance Status</label>
+                    <select id="reportsStatus" class="form-control filter-control" data-filter="status">
+                        <option value="">All Status</option>
+                        <option value="present">Present</option>
+                        <option value="absent">Absent</option>
+                        <option value="in">Still Inside</option>
+                        <option value="out">Completed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reportsDate">Date</label>
+                    <input type="date" id="reportsDate" class="form-control filter-control" data-filter="date">
+                </div>
+                <div class="form-group">
+                    <label for="reportsSearch">Search</label>
+                    <input type="text" id="reportsSearch" class="form-control filter-control filter-search"
+                           data-filter="search" placeholder="Search by name or ID...">
+                </div>
+            </div>
+            <details class="mt-2">
+                <summary class="advanced-filters-summary">
+                    <i class="fas fa-cog"></i> Date & Time Range
+                </summary>
+                <div class="filter-grid mt-2">
+                    <div class="form-group">
+                        <label for="reportsStartDate">Start Date</label>
+                        <input type="date" id="reportsStartDate" class="form-control filter-control" data-filter="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="reportsEndDate">End Date</label>
+                        <input type="date" id="reportsEndDate" class="form-control filter-control" data-filter="endDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="reportsStartTime">Start Time</label>
+                        <input type="time" id="reportsStartTime" class="form-control filter-control" data-filter="startTime">
+                    </div>
+                    <div class="form-group">
+                        <label for="reportsEndTime">End Time</label>
+                        <input type="time" id="reportsEndTime" class="form-control filter-control" data-filter="endTime">
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-file-alt"></i> Full Report</h3>
+            <div class="card-actions">
+                <button type="button" class="btn btn-primary btn-sm" onclick="openModal('printModal')">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <button type="button" class="btn btn-success btn-sm" onclick="openModal('exportModal')">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-container">
+                <table id="reportsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>College</th>
+                            <th>Program</th>
+                            <th>Year</th>
+                            <th>Section</th>
+                            <th>Time In</th>
+                            <th>Time Out</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsTableBody">
+                        {% for data in student_report_data %}
+                        <tr>
+                            <td>{{ data.student.student_id }}</td>
+                            <td>{{ data.student.name }}</td>
+                            <td>{{ data.student.college_code }}</td>
+                            <td>{{ data.student.program_code }}</td>
+                            <td>{{ data.student.year }}</td>
+                            <td>{{ data.student.section }}</td>
+                            <td>{{ data.time_in|date:"h:i A"|default:"-" }}</td>
+                            <td>{{ data.time_out|date:"h:i A"|default:"-" }}</td>
+                            <td>{{ data.date|date:"d/m/Y"|default:"-" }}</td>
+                            <td>
+                                <span class="badge badge-{% if data.status == 'ABSENT' %}danger{% elif data.status == 'COMPLETED' %}success{% else %}info{% endif %}">
+                                    {{ data.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center">No attendance records found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer">
+                <div class="pagination-container" id="reportsPagination">
+                    <div class="pagination-info">Showing 1-10 of {{ student_report_data|length }} records</div>
+                    <div class="pagination-controls">
+                        <button class="btn btn-sm" disabled>
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </button>
+                        <span class="pagination-page">Page 1 of 1</span>
+                        <button class="btn btn-sm" disabled>
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Users Tab -->
+<div id="approve" class="tabs">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-users-cog"></i> User Management</h3>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openAddUserModal()">
+                <i class="fas fa-plus"></i> Add User
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="stats-grid mb-3 user-stats">
+                <div class="stat-card stat-warning">
+                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                    <div class="stat-label">Pending</div>
+                    <div class="stat-value">{{ pending_users.count }}</div>
+                </div>
+                <div class="stat-card stat-success">
+                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-label">Active</div>
+                    <div class="stat-value">{{ active_users }}</div>
+                </div>
+                <div class="stat-card stat-info">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-label">Total Users</div>
+                    <div class="stat-value">{{ total_users }}</div>
+                </div>
+            </div>
+            
+            {% if pending_users %}
+            <div class="pending-approvals">
+                <h4 class="pending-approvals-title">
+                    <i class="fas fa-exclamation-triangle"></i> Pending Approvals ({{ pending_users.count }})
+                </h4>
+                <div class="pending-list">
+                    {% for user in pending_users %}
+                    <div class="pending-chip">
+                        <div class="user-avatar user-avatar-sm user-avatar-pending">
+                            {{ user.username|slice:":2"|upper }}
+                        </div>
+                        <div>
+                            <div class="user-name">{{ user.username }}</div>
+                            <div class="form-hint">{{ user.email }}</div>
+                        </div>
+                        <button type="button" class="btn btn-success btn-sm" onclick="approveUser({{ user.id }}, '{{ user.username }}')">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="table-container">
+                <table id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        {% for user in all_users %}
+                        <tr data-user-id="{{ user.id }}">
+                            <td>
+                                <div class="user-cell">
+                                    <div class="user-avatar {% if user.is_superuser %}user-avatar-super{% elif user.is_staff %}user-avatar-staff{% else %}user-avatar-user{% endif %}">
+                                        {{ user.username|slice:":2"|upper }}
+                                    </div>
+                                    <div class="user-name">
+                                        {{ user.username }}
+                                        {% if user.is_superuser %}<span class="badge badge-danger">SUPER</span>{% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ user.email|default:"-" }}</td>
+                            <td>
+                                {% if user.is_superuser %}
+                                    <span class="badge badge-danger">Superuser</span>
+                                {% elif user.is_staff %}
+                                    <span class="badge badge-info">Staff</span>
+                                {% else %}
+                                    <span class="badge badge-muted">User</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.is_active %}
+                                    <span class="badge badge-success">Active</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                            <td>
+                                <div class="table-actions">
+                                    {% if not user.is_active %}
+                                        <button type="button" class="btn btn-success btn-sm" onclick="approveUser({{ user.id }}, '{{ user.username }}')">
+                                            <i class="fas fa-check"></i> Approve
+                                        </button>
+                                    {% endif %}
+                                    {% if not user.is_superuser %}
+                                        <button type="button" class="btn btn-warning btn-sm" onclick="openEditUserModal({{ user.id }}, '{{ user.username }}', '{{ user.email }}', {{ user.is_staff|yesno:'true,false' }}, {{ user.is_active|yesno:'true,false' }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        {% if user.id != request.user.id %}
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteUser({{ user.id }}, '{{ user.username }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div id="addUserModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-plus"></i> Add New User</h3>
+            <button class="modal-close" onclick="closeModal('addUserModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="addUserForm">
+                <div class="form-group">
+                    <label for="addUsername">Username *</label>
+                    <input type="text" id="addUsername" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="addEmail">Email</label>
+                    <input type="email" id="addEmail" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="addPassword">Password *</label>
+                    <input type="password" id="addPassword" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="addIsStaff">
+                        Staff privileges (can access admin)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="addIsActive" checked>
+                        Active (approved immediately)
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('addUserModal')">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn btn-primary" onclick="submitAddUser()">
+                <i class="fas fa-plus"></i> Add User
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Student Modal -->
+<div id="addStudentModal" class="modal">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-graduate"></i> Add New Student</h3>
+            <button class="modal-close" onclick="closeModal('addStudentModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="addStudentForm">
+                {% csrf_token %}
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="addStudentId">Student ID *</label>
+                        <input type="text" id="addStudentId" class="form-control" placeholder="Enter student ID" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="addStudentName">Full Name *</label>
+                        <input type="text" id="addStudentName" class="form-control" placeholder="Enter full name" required>
+                    </div>
+                </div>
+                
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="addStudentGender">Gender *</label>
+                        <select id="addStudentGender" class="form-control" required>
+                            <option value="">-- Select Gender --</option>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="addStudentCollege">College *</label>
+                        <select id="addStudentCollege" class="form-control" required>
+                            <option value="">-- Select College --</option>
+                            {% for college in unique_colleges %}
+                            <option value="{{ college }}">{{ college }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="addStudentProgram">Program *</label>
+                        <select id="addStudentProgram" class="form-control" required>
+                            <option value="">-- Select Program --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="addStudentYear">Year *</label>
+                        <select id="addStudentYear" class="form-control" required>
+                            <option value="">-- Select Year --</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                            <option value="5">5th Year</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="addStudentSection">Section *</label>
+                    <input type="text" id="addStudentSection" class="form-control" placeholder="Enter section" required>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('addStudentModal')">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn btn-success" onclick="submitAddStudent()">
+                <i class="fas fa-plus"></i> Add Student
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Import Students Modal -->
+<div id="uploadStudentsModal" class="modal">
+    <div class="modal-content modal-md">
+        <div class="modal-header">
+            <h3><i class="fas fa-file-upload"></i> Import Students</h3>
+            <button class="modal-close" onclick="closeModal('uploadStudentsModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="uploadStudentsForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="studentFile">Select File *</label>
+                    <input type="file" id="studentFile" name="student_file" class="form-control"
+                           accept=".pdf,.csv,.xlsx,.xlsm,application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                    <small class="form-hint">Supported formats: PDF, CSV, Excel (.xlsx)</small>
+                </div>
+                
+                <div class="info-callout">
+                    <div class="info-callout-title">
+                        <i class="fas fa-info-circle"></i> File Requirements
+                    </div>
+                    <ul>
+                        <li>Maximum file size: 10MB</li>
+                        <li>CSV/Excel should include a header row (recommended)</li>
+                        <li>Columns: Student ID, Name, Gender, College, Program, Year, Section</li>
+                        <li>PDF files should contain a readable student table</li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('uploadStudentsModal')">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn btn-primary" onclick="submitUploadStudents()">
+                <i class="fas fa-upload"></i> Upload & Process
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Student Modal -->
+<div id="editStudentModal" class="modal">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-edit"></i> Edit Student</h3>
+            <button class="modal-close" onclick="closeModal('editStudentModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editStudentForm">
+                {% csrf_token %}
+                <input type="hidden" id="editStudentDbId">
+                
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="editStudentId">Student ID</label>
+                        <input type="text" id="editStudentId" class="form-control" disabled>
+                        <small class="form-text">Student ID cannot be changed</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editStudentName">Full Name *</label>
+                        <input type="text" id="editStudentName" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="editStudentGender">Gender *</label>
+                        <select id="editStudentGender" class="form-control" required>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editStudentCollege">College *</label>
+                        <select id="editStudentCollege" class="form-control" required>
+                            <option value="">-- Select College --</option>
+                            {% for college in unique_colleges %}
+                            <option value="{{ college }}">{{ college }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="editStudentProgram">Program *</label>
+                        <select id="editStudentProgram" class="form-control" required>
+                            <option value="">-- Select Program --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editStudentYear">Year *</label>
+                        <select id="editStudentYear" class="form-control" required>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                            <option value="5">5th Year</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editStudentSection">Section *</label>
+                    <input type="text" id="editStudentSection" class="form-control" required>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('editStudentModal')">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn btn-warning" onclick="submitEditStudent()">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div id="editUserModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-edit"></i> Edit User</h3>
+            <button class="modal-close" onclick="closeModal('editUserModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="editUsername" class="form-control" disabled>
+                    <small class="form-text">Username cannot be changed</small>
+                </div>
+                <div class="form-group">
+                    <label for="editEmail">Email</label>
+                    <input type="email" id="editEmail" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="editNewPassword">New Password (leave blank to keep current)</label>
+                    <input type="password" id="editNewPassword" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="editIsStaff">
+                        Staff privileges
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="editIsActive">
+                        Active
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('editUserModal')">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn btn-primary" onclick="submitEditUser()">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Print Options Modal -->
+<div id="printModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-print"></i> Print Report Options</h3>
+            <button class="modal-close" onclick="closeModal('printModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="printOptionsForm">
+                <div class="form-group">
+                    <label for="printEvent">Event/Occasion</label>
+                    <input type="text" id="printEvent" class="form-control" placeholder="e.g., Morning Assembly, Flag Ceremony">
+                </div>
+                
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="printCollege">College</label>
+                        <select id="printCollege" class="form-control">
+                            <option value="">All Colleges</option>
+                            {% for college in unique_colleges %}
+                            <option value="{{ college }}">{{ college }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="printProgram">Program</label>
+                        <select id="printProgram" class="form-control">
+                            <option value="">All Programs</option>
+                            {% for program in unique_programs %}
+                            <option value="{{ program }}">{{ program }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="printDateFrom">Date From</label>
+                        <input type="date" id="printDateFrom" class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="printDateTo">Date To</label>
+                        <input type="date" id="printDateTo" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="printTimeFrom">Time From</label>
+                        <input type="time" id="printTimeFrom" class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="printTimeTo">Time To</label>
+                        <input type="time" id="printTimeTo" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="printGender">Gender</label>
+                    <select id="printGender" class="form-control">
+                        <option value="">All Genders</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="printIncludeHeaders" checked>
+                        Include Headers & Title
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="printIncludeStats" checked>
+                        Include Statistics Summary
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('printModal')">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn btn-primary" onclick="applyPrintOptions()">
+                <i class="fas fa-print"></i> Print Now
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Export Students Modal -->
+<div id="exportStudentsModal" class="modal">
+    <div class="modal-content modal-md">
+        <div class="modal-header">
+            <h3><i class="fas fa-download"></i> Export Students</h3>
+            <button class="modal-close" onclick="closeModal('exportStudentsModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="exportStudentsForm">
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="exportStudentsCollege">College</label>
+                        <select id="exportStudentsCollege" class="form-control filter-college" data-program-target="exportStudentsProgram">
+                            <option value="">All Colleges</option>
+                            {% for college in unique_colleges %}
+                            <option value="{{ college }}">{{ college }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="exportStudentsProgram">Program</label>
+                        <select id="exportStudentsProgram" class="form-control">
+                            <option value="">All Programs</option>
+                            {% for program in unique_programs %}
+                            <option value="{{ program }}">{{ program }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="exportStudentsYear">Year Level</label>
+                        <select id="exportStudentsYear" class="form-control">
+                            <option value="">All Years</option>
+                            <option value="1">Year 1</option>
+                            <option value="2">Year 2</option>
+                            <option value="3">Year 3</option>
+                            <option value="4">Year 4</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="exportStudentsSection">Section</label>
+                        <input type="text" id="exportStudentsSection" class="form-control" placeholder="All sections">
+                    </div>
+                </div>
+
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="exportStudentsGender">Gender</label>
+                        <select id="exportStudentsGender" class="form-control">
+                            <option value="">All Genders</option>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="exportStudentsFormat">File Type</label>
+                        <select id="exportStudentsFormat" class="form-control">
+                            <option value="csv">CSV (Excel Compatible)</option>
+                            <option value="xlsx">Excel (.xlsx)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="exportStudentsIncludeHeaders" checked>
+                        Include column headers
+                    </label>
+                </div>
+
+                <div class="info-callout">
+                    <div class="info-callout-title">
+                        <i class="fas fa-info-circle"></i> Export scope
+                    </div>
+                    <p class="form-hint mb-0">Exports all matching students from the database, not just the current table page.</p>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('exportStudentsModal')">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn btn-success" id="exportStudentsSubmitBtn" onclick="applyExportStudents()">
+                <i class="fas fa-download"></i> Export Now
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- QR Codes Modal -->
+<div id="qrCodesModal" class="modal">
+    <div class="modal-content modal-xl">
+        <div class="modal-header">
+            <h3><i class="fas fa-qrcode"></i> QR Codes</h3>
+            <button class="modal-close" onclick="closeModal('qrCodesModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="qrCodesForm">
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="qrCollege">College</label>
+                        <select id="qrCollege" class="form-control filter-college" data-program-target="qrProgram">
+                            <option value="">All Colleges</option>
+                            {% for college in unique_colleges %}
+                            <option value="{{ college }}">{{ college }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="qrProgram">Program</label>
+                        <select id="qrProgram" class="form-control">
+                            <option value="">All Programs</option>
+                            {% for program in unique_programs %}
+                            <option value="{{ program }}">{{ program }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="qrYear">Year Level</label>
+                        <select id="qrYear" class="form-control">
+                            <option value="">All Years</option>
+                            <option value="1">Year 1</option>
+                            <option value="2">Year 2</option>
+                            <option value="3">Year 3</option>
+                            <option value="4">Year 4</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="qrSection">Section</label>
+                        <input type="text" id="qrSection" class="form-control" placeholder="All sections">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="qrGender">Gender</label>
+                    <select id="qrGender" class="form-control">
+                        <option value="">All Genders</option>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                    </select>
+                </div>
+            </form>
+
+            <div class="qr-modal-toolbar">
+                <span class="qr-modal-count" id="qrCodesCount">Load QR codes using the filters above.</span>
+                <div class="card-actions">
+                    <button type="button" class="btn btn-primary btn-sm" id="qrLoadBtn" onclick="loadQrCodes()">
+                        <i class="fas fa-sync-alt"></i> Load QR Codes
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm" id="qrExportPdfBtn" onclick="exportQrCodes('pdf')">
+                        <i class="fas fa-file-pdf"></i> Export PDF
+                    </button>
+                    <button type="button" class="btn btn-info btn-sm" id="qrExportZipBtn" onclick="exportQrCodes('zip')">
+                        <i class="fas fa-file-archive"></i> Export ZIP
+                    </button>
+                </div>
+            </div>
+
+            <div id="qrCodesLoading" class="qr-modal-loading" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i> Generating QR codes...
+            </div>
+            <div id="qrCodesEmpty" class="qr-modal-empty" style="display: none;">
+                No students match the selected filters.
+            </div>
+            <div id="qrCodesGrid" class="qr-modal-grid"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('qrCodesModal')">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Export Options Modal -->
+<div id="exportModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-download"></i> Export Report Options</h3>
+            <button class="modal-close" onclick="closeModal('exportModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="exportOptionsForm">
+                <div class="form-group">
+                    <label for="exportEvent">Event/Occasion</label>
+                    <input type="text" id="exportEvent" class="form-control" placeholder="e.g., Morning Assembly, Flag Ceremony">
+                    <small class="form-text">This will be included in the filename</small>
+                </div>
+                
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="exportCollege">College</label>
+                        <select id="exportCollege" class="form-control">
+                            <option value="">All Colleges</option>
+                            {% for college in unique_colleges %}
+                            <option value="{{ college }}">{{ college }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="exportProgram">Program</label>
+                        <select id="exportProgram" class="form-control">
+                            <option value="">All Programs</option>
+                            {% for program in unique_programs %}
+                            <option value="{{ program }}">{{ program }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="exportDateFrom">Date From</label>
+                        <input type="date" id="exportDateFrom" class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="exportDateTo">Date To</label>
+                        <input type="date" id="exportDateTo" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="exportTimeFrom">Time From</label>
+                        <input type="time" id="exportTimeFrom" class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="exportTimeTo">Time To</label>
+                        <input type="time" id="exportTimeTo" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="exportGender">Gender</label>
+                    <select id="exportGender" class="form-control">
+                        <option value="">All Genders</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="exportFormat">Export Format</label>
+                    <select id="exportFormat" class="form-control">
+                        <option value="csv">CSV (Excel Compatible)</option>
+                        <option value="xlsx">Excel (.xlsx)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="exportIncludeHeaders" checked>
+                        Include Column Headers
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="exportIncludeSummary">
+                        Include Summary Sheet
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('exportModal')">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn btn-success" onclick="applyExportOptions()">
+                <i class="fas fa-download"></i> Export Now
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Load jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+// College-Program mapping from server
+const collegeProgramsMap = {{ college_programs_json|safe }};
+const studentProgramsByCollege = {{ student_programs_by_college_json|safe }};
+
+// Function to update program dropdown based on selected college
+function updateProgramDropdown(collegeSelectId, programSelectId) {
+    const collegeSelect = document.getElementById(collegeSelectId);
+    const programSelect = document.getElementById(programSelectId);
+    
+    if (!collegeSelect || !programSelect) return;
+
+    const previousValue = programSelect.value;
+    const selectedCollege = collegeSelect.value;
+    const added = new Set();
+
+    function addProgram(code, label) {
+        if (!code || added.has(code)) return;
+        added.add(code);
+        const option = document.createElement('option');
+        option.value = code;
+        option.textContent = label || code;
+        programSelect.appendChild(option);
+    }
+
+    programSelect.innerHTML = '<option value="">All Programs</option>';
+
+    if (selectedCollege) {
+        if (collegeProgramsMap[selectedCollege]) {
+            collegeProgramsMap[selectedCollege].forEach(program => {
+                addProgram(program.code, program.code + ' - ' + program.name);
+            });
+        }
+        if (studentProgramsByCollege[selectedCollege]) {
+            studentProgramsByCollege[selectedCollege].forEach(code => {
+                addProgram(code, code);
+            });
+        }
+    } else {
+        Object.keys(collegeProgramsMap).forEach(college => {
+            collegeProgramsMap[college].forEach(program => {
+                addProgram(program.code, program.code + ' - ' + program.name);
+            });
+        });
+        Object.keys(studentProgramsByCollege).forEach(college => {
+            studentProgramsByCollege[college].forEach(code => {
+                addProgram(code, code);
+            });
+        });
+    }
+
+    if (previousValue && Array.from(programSelect.options).some(opt => opt.value === previousValue)) {
+        programSelect.value = previousValue;
+    }
+}
+
+// Setup event listeners when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    // Print / Export modals
+    const printCollegeSelect = document.getElementById('printCollege');
+    if (printCollegeSelect) {
+        printCollegeSelect.addEventListener('change', () => {
+            updateProgramDropdown('printCollege', 'printProgram');
+        });
+    }
+
+    const exportCollegeSelect = document.getElementById('exportCollege');
+    if (exportCollegeSelect) {
+        exportCollegeSelect.addEventListener('change', () => {
+            updateProgramDropdown('exportCollege', 'exportProgram');
+        });
+    }
+
+    // Per-menu college → program filters
+    document.querySelectorAll('.filter-college').forEach(collegeSelect => {
+        collegeSelect.addEventListener('change', () => {
+            const programId = collegeSelect.dataset.programTarget;
+            if (programId) {
+                updateProgramDropdown(collegeSelect.id, programId);
+            }
+        });
+    });
+});
+
+// ==================== USER MANAGEMENT FUNCTIONS ====================
+function openAddUserModal() {
+    document.getElementById('addUserModal').classList.add('active');
+}
+
+function openEditUserModal(id, username, email, isStaff, isActive) {
+    document.getElementById('editUserId').value = id;
+    document.getElementById('editUsername').value = username;
+    document.getElementById('editEmail').value = email;
+    document.getElementById('editIsStaff').checked = isStaff;
+    document.getElementById('editIsActive').checked = isActive;
+    document.getElementById('editUserModal').classList.add('active');
+}
+
+function submitAddUser() {
+    const username = document.getElementById('addUsername').value.trim();
+    const email = document.getElementById('addEmail').value.trim();
+    const password = document.getElementById('addPassword').value;
+    const isStaff = document.getElementById('addIsStaff').checked;
+    const isActive = document.getElementById('addIsActive').checked;
+    
+    if (!username || !password) {
+        alert('Username and password are required');
+        return;
+    }
+    
+    $.post("{% url 'manage_users' %}", {
+        action: 'add',
+        username: username,
+        email: email,
+        password: password,
+        is_staff: isStaff,
+        is_active: isActive,
+        csrfmiddlewaretoken: "{{ csrf_token }}"
+    }, function(response) {
+        if (response.success) {
+            alert(response.message);
+            closeModal('addUserModal');
+            location.reload();
+        } else {
+            alert('Error: ' + response.error);
+        }
+    }).fail(function() {
+        alert('Network error. Please try again.');
+    });
+}
+
+function submitEditUser() {
+    const userId = document.getElementById('editUserId').value;
+    const email = document.getElementById('editEmail').value.trim();
+    const newPassword = document.getElementById('editNewPassword').value;
+    const isStaff = document.getElementById('editIsStaff').checked;
+    const isActive = document.getElementById('editIsActive').checked;
+    
+    $.post("{% url 'manage_users' %}", {
+        action: 'edit',
+        user_id: userId,
+        email: email,
+        new_password: newPassword,
+        is_staff: isStaff,
+        is_active: isActive,
+        csrfmiddlewaretoken: "{{ csrf_token }}"
+    }, function(response) {
+        if (response.success) {
+            alert(response.message);
+            closeModal('editUserModal');
+            location.reload();
+        } else {
+            alert('Error: ' + response.error);
+        }
+    }).fail(function() {
+        alert('Network error. Please try again.');
+    });
+}
+
+function deleteUser(userId, username) {
+    if (!confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+        return;
+    }
+    
+    $.post("{% url 'manage_users' %}", {
+        action: 'delete',
+        user_id: userId,
+        csrfmiddlewaretoken: "{{ csrf_token }}"
+    }, function(response) {
+        if (response.success) {
+            alert(response.message);
+            location.reload();
+        } else {
+            alert('Error: ' + response.error);
+        }
+    }).fail(function() {
+        alert('Network error. Please try again.');
+    });
+}
+
+function approveUser(userId, username) {
+    $.post("{% url 'manage_users' %}", {
+        action: 'approve',
+        user_id: userId,
+        csrfmiddlewaretoken: "{{ csrf_token }}"
+    }, function(response) {
+        if (response.success) {
+            alert(response.message);
+            location.reload();
+        } else {
+            alert('Error: ' + response.error);
+        }
+    }).fail(function() {
+        alert('Network error. Please try again.');
+    });
+}
+
+// ==================== STUDENT MANAGEMENT FUNCTIONS ====================
+// Setup college-program relationship for Add Student modal
+document.addEventListener('DOMContentLoaded', () => {
+    const addStudentCollege = document.getElementById('addStudentCollege');
+    if (addStudentCollege) {
+        addStudentCollege.addEventListener('change', () => {
+            updateProgramDropdown('addStudentCollege', 'addStudentProgram');
+        });
+    }
+    
+    const editStudentCollege = document.getElementById('editStudentCollege');
+    if (editStudentCollege) {
+        editStudentCollege.addEventListener('change', () => {
+            updateProgramDropdown('editStudentCollege', 'editStudentProgram');
+        });
+    }
+});
+
+function submitAddStudent() {
+    const studentId = document.getElementById('addStudentId').value.trim();
+    const studentName = document.getElementById('addStudentName').value.trim();
+    const gender = document.getElementById('addStudentGender').value;
+    const college = document.getElementById('addStudentCollege').value;
+    const program = document.getElementById('addStudentProgram').value;
+    const year = document.getElementById('addStudentYear').value;
+    const section = document.getElementById('addStudentSection').value.trim();
+    
+    // Validation
+    if (!studentId || !studentName || !gender || !college || !program || !year || !section) {
+        alert('Please fill in all required fields');
+        return;
+    }
+    
+    // Submit via AJAX
+    $.post("{% url 'add_student' %}", {
+        student_id: studentId,
+        name: studentName,
+        sex: gender,
+        college: college,
+        program: program,
+        year: year,
+        section: section,
+        csrfmiddlewaretoken: "{{ csrf_token }}"
+    }, function(response) {
+        if (response.success) {
+            alert('Student added successfully!');
+            closeModal('addStudentModal');
+            // Clear form
+            document.getElementById('addStudentForm').reset();
+            // Reload page to show new student
+            location.reload();
+        } else {
+            alert('Error: ' + (response.error || 'Failed to add student'));
+        }
+    }).fail(function(xhr) {
+        if (xhr.responseJSON && xhr.responseJSON.error) {
+            alert('Error: ' + xhr.responseJSON.error);
+        } else {
+            alert('Network error. Please try again.');
+        }
+    });
+}
+
+function submitUploadStudents() {
+    const fileInput = document.getElementById('studentFile');
+    const file = fileInput.files[0];
+    const allowedExtensions = ['.pdf', '.csv', '.xlsx', '.xlsm'];
+    const allowedTypes = [
+        'application/pdf',
+        'text/csv',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+    
+    if (!file) {
+        alert('Please select a file');
+        return;
+    }
+
+    const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+    if (!allowedExtensions.includes(extension) && !allowedTypes.includes(file.type)) {
+        alert('Please select a PDF, CSV, or Excel (.xlsx) file');
+        return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('student_file', file);
+    formData.append('csrfmiddlewaretoken', "{{ csrf_token }}");
+    
+    const submitBtn = event.target;
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    submitBtn.disabled = true;
+    
+    $.ajax({
+        url: "{% url 'upload_pdf' %}",
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                alert('File uploaded and processed successfully!\n' + (response.message || ''));
+                closeModal('uploadStudentsModal');
+                document.getElementById('uploadStudentsForm').reset();
+                location.reload();
+            } else {
+                alert('Error: ' + (response.error || 'Failed to process file'));
+            }
+        },
+        error: function(xhr) {
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                alert('Error: ' + xhr.responseJSON.error);
+            } else {
+                alert('Network error. Please try again.');
+            }
+        },
+        complete: function() {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+}
+
+function getQrFilterParams() {
+    const params = new URLSearchParams();
+    const college = document.getElementById('qrCollege')?.value || '';
+    const program = document.getElementById('qrProgram')?.value || '';
+    const year = document.getElementById('qrYear')?.value || '';
+    const section = document.getElementById('qrSection')?.value.trim() || '';
+    const gender = document.getElementById('qrGender')?.value || '';
+
+    if (college) params.append('college', college);
+    if (program) params.append('program', program);
+    if (year) params.append('year', year);
+    if (section) params.append('section', section);
+    if (gender) params.append('gender', gender);
+    return params;
+}
+
+function renderQrCodesGrid(qrList) {
+    const grid = document.getElementById('qrCodesGrid');
+    const empty = document.getElementById('qrCodesEmpty');
+    const count = document.getElementById('qrCodesCount');
+
+    if (!grid || !empty || !count) return;
+
+    const escapeHtml = (text) => {
+        const div = document.createElement('div');
+        div.textContent = text ?? '';
+        return div.innerHTML;
+    };
+
+    if (!qrList.length) {
+        grid.innerHTML = '';
+        empty.style.display = 'block';
+        count.textContent = '0 QR codes loaded';
+
+        const program = document.getElementById('qrProgram')?.value || '';
+        if (program) {
+            empty.textContent = `No students found for ${program}. Try "All Programs" or pick a program that exists in your student records (e.g. BSINT, BSCS).`;
+        } else {
+            empty.textContent = 'No students match the selected filters.';
+        }
+        return;
+    }
+
+    empty.style.display = 'none';
+    count.textContent = `${qrList.length} QR code${qrList.length === 1 ? '' : 's'} loaded`;
+    grid.innerHTML = qrList.map(item => `
+        <div class="qr-modal-card">
+            <strong>${escapeHtml(item.name)}</strong>
+            <small>${escapeHtml(item.student_id)}</small>
+            <small>${escapeHtml(item.college)} · ${escapeHtml(item.program)}</small>
+            <small>Year ${escapeHtml(String(item.year))} · ${escapeHtml(item.section || '-')}</small>
+            <img src="data:image/png;base64,${item.qr_img}" alt="QR for ${escapeHtml(item.student_id)}">
+        </div>
+    `).join('');
+}
+
+function openQrCodesModal() {
+    const college = document.getElementById('studentsCollege');
+    const program = document.getElementById('studentsProgram');
+    const year = document.getElementById('studentsYear');
+    const qrProgram = document.getElementById('qrProgram');
+
+    if (college) {
+        document.getElementById('qrCollege').value = college.value;
+    }
+    updateProgramDropdown('qrCollege', 'qrProgram');
+
+    if (program && qrProgram) {
+        qrProgram.value = program.value;
+        if (program.value && qrProgram.value !== program.value) {
+            qrProgram.value = '';
+        }
+    }
+    if (year) {
+        document.getElementById('qrYear').value = year.value;
+    }
+
+    document.getElementById('qrSection').value = '';
+    document.getElementById('qrGender').value = '';
+    document.getElementById('qrCodesGrid').innerHTML = '';
+    document.getElementById('qrCodesEmpty').style.display = 'none';
+    document.getElementById('qrCodesLoading').style.display = 'none';
+    document.getElementById('qrCodesCount').textContent = 'Load QR codes using the filters above.';
+
+    openModal('qrCodesModal');
+    loadQrCodes();
+}
+
+function loadQrCodes() {
+    const loading = document.getElementById('qrCodesLoading');
+    const loadBtn = document.getElementById('qrLoadBtn');
+    const params = getQrFilterParams();
+
+    loading.style.display = 'block';
+    document.getElementById('qrCodesEmpty').style.display = 'none';
+    if (loadBtn) loadBtn.disabled = true;
+
+    fetch("{% url 'ajax_qr_codes' %}?" + params.toString(), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to load QR codes');
+            }
+            renderQrCodesGrid(data.qr_list || []);
+        })
+        .catch(error => {
+            alert(error.message || 'Could not load QR codes.');
+            renderQrCodesGrid([]);
+        })
+        .finally(() => {
+            loading.style.display = 'none';
+            if (loadBtn) loadBtn.disabled = false;
+        });
+}
+
+function exportQrCodes(format) {
+    const params = getQrFilterParams();
+    params.append('format', format);
+
+    const pdfBtn = document.getElementById('qrExportPdfBtn');
+    const zipBtn = document.getElementById('qrExportZipBtn');
+    const activeBtn = format === 'zip' ? zipBtn : pdfBtn;
+    const originalText = activeBtn.innerHTML;
+
+    activeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+    activeBtn.disabled = true;
+    if (pdfBtn && pdfBtn !== activeBtn) pdfBtn.disabled = true;
+    if (zipBtn && zipBtn !== activeBtn) zipBtn.disabled = true;
+
+    fetch("{% url 'export_qr_codes' %}?" + params.toString())
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text || 'Export failed');
+                });
+            }
+            const disposition = response.headers.get('Content-Disposition') || '';
+            const match = disposition.match(/filename="?([^"]+)"?/);
+            const filename = match ? match[1] : (`qrcodes.${format === 'zip' ? 'zip' : 'pdf'}`);
+            return response.blob().then(blob => ({ blob, filename }));
+        })
+        .then(({ blob, filename }) => {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            alert(error.message || 'Could not export QR codes.');
+        })
+        .finally(() => {
+            activeBtn.innerHTML = originalText;
+            activeBtn.disabled = false;
+            if (pdfBtn) pdfBtn.disabled = false;
+            if (zipBtn) zipBtn.disabled = false;
+        });
+}
+
+function openExportStudentsModal() {
+    const college = document.getElementById('studentsCollege');
+    const program = document.getElementById('studentsProgram');
+    const year = document.getElementById('studentsYear');
+
+    if (college) {
+        document.getElementById('exportStudentsCollege').value = college.value;
+        updateProgramDropdown('exportStudentsCollege', 'exportStudentsProgram');
+    }
+    if (program) {
+        document.getElementById('exportStudentsProgram').value = program.value;
+    }
+    if (year) {
+        document.getElementById('exportStudentsYear').value = year.value;
+    }
+
+    openModal('exportStudentsModal');
+}
+
+function applyExportStudents() {
+    const params = new URLSearchParams();
+    const college = document.getElementById('exportStudentsCollege')?.value || '';
+    const program = document.getElementById('exportStudentsProgram')?.value || '';
+    const year = document.getElementById('exportStudentsYear')?.value || '';
+    const section = document.getElementById('exportStudentsSection')?.value.trim() || '';
+    const gender = document.getElementById('exportStudentsGender')?.value || '';
+    const format = document.getElementById('exportStudentsFormat')?.value || 'csv';
+    const includeHeaders = document.getElementById('exportStudentsIncludeHeaders')?.checked;
+
+    if (college) params.append('college', college);
+    if (program) params.append('program', program);
+    if (year) params.append('year', year);
+    if (section) params.append('section', section);
+    if (gender) params.append('gender', gender);
+    params.append('format', format);
+    params.append('include_headers', includeHeaders ? '1' : '0');
+
+    const submitBtn = document.getElementById('exportStudentsSubmitBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+    submitBtn.disabled = true;
+
+    fetch("{% url 'export_students' %}?" + params.toString())
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text || 'Export failed');
+                });
+            }
+            const disposition = response.headers.get('Content-Disposition') || '';
+            const match = disposition.match(/filename="?([^"]+)"?/);
+            const filename = match ? match[1] : ('students.' + format);
+            return response.blob().then(blob => ({ blob, filename }));
+        })
+        .then(({ blob, filename }) => {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            closeModal('exportStudentsModal');
+        })
+        .catch(error => {
+            alert(error.message || 'Could not export students.');
+        })
+        .finally(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+}
+
+function openEditStudentModal(id, studentId, name, sex, college, program, year, section) {
+    document.getElementById('editStudentDbId').value = id;
+    document.getElementById('editStudentId').value = studentId;
+    document.getElementById('editStudentName').value = name;
+    document.getElementById('editStudentGender').value = sex;
+    document.getElementById('editStudentCollege').value = college;
+    
+    // Update program dropdown and set value
+    updateProgramDropdown('editStudentCollege', 'editStudentProgram');
+    setTimeout(() => {
+        document.getElementById('editStudentProgram').value = program;
+    }, 100);
+    
+    document.getElementById('editStudentYear').value = year;
+    document.getElementById('editStudentSection').value = section;
+    
+    document.getElementById('editStudentModal').classList.add('active');
+}
+
+function submitEditStudent() {
+    const id = document.getElementById('editStudentDbId').value;
+    const name = document.getElementById('editStudentName').value.trim();
+    const sex = document.getElementById('editStudentGender').value;
+    const college = document.getElementById('editStudentCollege').value;
+    const program = document.getElementById('editStudentProgram').value;
+    const year = document.getElementById('editStudentYear').value;
+    const section = document.getElementById('editStudentSection').value.trim();
+    
+    if (!name || !sex || !college || !program || !year || !section) {
+        alert('Please fill in all required fields');
+        return;
+    }
+    
+    $.post("{% url 'edit_student' 0 %}".replace('/0/', '/' + id + '/'), {
+        name: name,
+        sex: sex,
+        college: college,
+        program: program,
+        year: year,
+        section: section,
+        csrfmiddlewaretoken: "{{ csrf_token }}"
+    }, function(response) {
+        if (response.success) {
+            alert('Student updated successfully!');
+            closeModal('editStudentModal');
+            location.reload();
+        } else {
+            alert('Error: ' + (response.error || 'Failed to update student'));
+        }
+    }).fail(function(xhr) {
+        if (xhr.responseJSON && xhr.responseJSON.error) {
+            alert('Error: ' + xhr.responseJSON.error);
+        } else {
+            alert('Network error. Please try again.');
+        }
+    });
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "qrapp/base.html" %}
+
+{% block title %}Import Students - Student QR System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Import Students</h1>
+    
+    <div class="upload-container">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="student_file">Select File:</label>
+                <input type="file" name="student_file" id="student_file"
+                       accept=".pdf,.csv,.xlsx,.xlsm" required>
+                <small class="form-hint">PDF, CSV, or Excel (.xlsx) — max 10MB</small>
+            </div>
+            <div class="info-callout mt-2">
+                <div class="info-callout-title">Expected columns</div>
+                <p>Student ID, Name, Gender, College, Program, Year, Section</p>
+            </div>
+            <button type="submit" class="btn">Upload & Process</button>
+        </form>
+    </div>
+    
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    
+    <div class="action-buttons">
+        <a href="{% url 'add_student' %}" class="btn">Add Student Manually</a>
+        <a href="{% url 'generate_all_qr' %}" class="btn btn-success">Generate All QR</a>
+    </div>
+</div>
+{% endblock %}

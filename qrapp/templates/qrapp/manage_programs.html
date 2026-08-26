@@ -1,0 +1,334 @@
+{% extends 'qrapp/base.html' %}
+{% load static %}
+
+{% block title %}Manage Programs - {{ college.code }} | QR Attendance System{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="header-content">
+        <h2><i class="fas fa-graduation-cap"></i> {{ college.code }} - Programs</h2>
+        <p>Manage programs for {{ college.name }}</p>
+    </div>
+    <div class="header-actions">
+        <a href="{% url 'manage_colleges' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Colleges
+        </a>
+        <button class="btn btn-primary" onclick="openAddModal()">
+            <i class="fas fa-plus"></i> Add Program
+        </button>
+    </div>
+</div>
+
+<!-- Messages -->
+{% if messages %}
+<div class="messages-container mb-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+        <button type="button" class="alert-close" onclick="this.parentElement.remove()">×</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Programs Table -->
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-book"></i> Program List</h3>
+        <div class="d-flex gap-2">
+            <span class="badge badge-info" style="padding: 8px 16px; font-size: 14px;">
+                Total: {{ programs.count }}
+            </span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table id="programsTable">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Full Name</th>
+                        <th>Status</th>
+                        <th>Students</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for program in programs %}
+                    <tr>
+                        <td><strong>{{ program.code }}</strong></td>
+                        <td>{{ program.name }}</td>
+                        <td>
+                            {% if program.is_active %}
+                            <span class="badge badge-success">Active</span>
+                            {% else %}
+                            <span class="badge badge-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td data-program-code="{{ program.code }}">
+                            <span class="student-count">Loading...</span>
+                        </td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" 
+                                    onclick="openEditModal('{{ program.id }}', '{{ program.code }}', '{{ program.name }}', {{ program.is_active|yesno:'true,false' }})">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn btn-danger btn-sm delete-btn" 
+                                    data-program-id="{{ program.id }}"
+                                    data-program-code="{{ program.code }}">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No programs found. Click "Add Program" to get started.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Program Modal -->
+<div id="addProgramModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus"></i> Add New Program</h3>
+            <button class="modal-close" onclick="closeModal('addProgramModal')">&times;</button>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="addCode">Program Code *</label>
+                    <input type="text" id="addCode" name="code" class="form-control" 
+                           placeholder="e.g., BSCS, BSIT" required maxlength="50">
+                    <small class="form-text">Short program code</small>
+                </div>
+                <div class="form-group">
+                    <label for="addName">Program Name *</label>
+                    <input type="text" id="addName" name="name" class="form-control" 
+                           placeholder="e.g., Bachelor of Science in Computer Science" required maxlength="200">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addProgramModal')">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Program
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Program Modal -->
+<div id="editProgramModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Edit Program</h3>
+            <button class="modal-close" onclick="closeModal('editProgramModal')">&times;</button>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" id="editProgramId" name="program_id">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editCode">Program Code *</label>
+                    <input type="text" id="editCode" name="code" class="form-control" 
+                           required maxlength="50">
+                    <small class="form-text">Changing the code may require updating students manually</small>
+                </div>
+                <div class="form-group">
+                    <label for="editName">Program Name *</label>
+                    <input type="text" id="editName" name="name" class="form-control" 
+                           required maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="editIsActive" name="is_active">
+                        Active (appears in dropdowns)
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editProgramModal')">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteProgramModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h3>
+            <button class="modal-close" onclick="closeModal('deleteProgramModal')">&times;</button>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" id="deleteProgramId" name="program_id">
+            <div class="modal-body">
+                <p id="deleteMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('deleteProgramModal')">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete Program
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.alert-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border-left: 4px solid var(--success);
+}
+
+.alert-error, .alert-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+    border-left: 4px solid var(--danger);
+}
+
+.alert-warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+    border-left: 4px solid var(--warning);
+}
+
+.alert-info {
+    background: rgba(6, 182, 212, 0.1);
+    color: var(--info);
+    border-left: 4px solid var(--info);
+}
+
+.alert-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+}
+
+.alert-close:hover {
+    opacity: 1;
+}
+</style>
+
+<script>
+// Program stats passed from server
+const programStats = {{ program_stats|safe }};
+
+// Update student counts on page load
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-program-code]').forEach(cell => {
+        const code = cell.getAttribute('data-program-code');
+        const count = programStats[code] || 0;
+        cell.querySelector('.student-count').textContent = count + ' students';
+    });
+    
+    // Setup delete button handlers
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-program-id');
+            const code = this.getAttribute('data-program-code');
+            const count = programStats[code] || 0;
+            confirmDelete(id, code, count);
+        });
+    });
+});
+
+function openAddModal() {
+    document.getElementById('addProgramModal').classList.add('active');
+}
+
+function openEditModal(id, code, name, isActive) {
+    document.getElementById('editProgramId').value = id;
+    document.getElementById('editCode').value = code;
+    document.getElementById('editName').value = name;
+    document.getElementById('editIsActive').checked = isActive;
+    document.getElementById('editProgramModal').classList.add('active');
+}
+
+function confirmDelete(id, code, studentCount) {
+    document.getElementById('deleteProgramId').value = id;
+    const message = studentCount > 0 
+        ? 'Cannot delete <strong>' + code + '</strong> because <strong>' + studentCount + ' students</strong> are enrolled in this program. Please reassign them first.'
+        : 'Are you sure you want to delete program <strong>' + code + '</strong>?';
+    document.getElementById('deleteMessage').innerHTML = message;
+    
+    // Disable delete button if students exist
+    const deleteBtn = document.getElementById('confirmDeleteBtn');
+    if (studentCount > 0) {
+        deleteBtn.disabled = true;
+        deleteBtn.style.opacity = '0.5';
+        deleteBtn.style.cursor = 'not-allowed';
+    } else {
+        deleteBtn.disabled = false;
+        deleteBtn.style.opacity = '1';
+        deleteBtn.style.cursor = 'pointer';
+    }
+    
+    document.getElementById('deleteProgramModal').classList.add('active');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+// Close modal on outside click
+window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+        e.target.classList.remove('active');
+    }
+});
+
+// Auto-hide alerts after 5 seconds
+document.addEventListener('DOMContentLoaded', () => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.style.transition = 'opacity 0.3s';
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 300);
+        }, 5000);
+    });
+});
+</script>
+
+{% endblock %}

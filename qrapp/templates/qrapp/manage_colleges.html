@@ -1,0 +1,336 @@
+{% extends 'qrapp/base.html' %}
+{% load static %}
+
+{% block title %}Manage Colleges | QR Attendance System{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="header-content">
+        <h2>Manage Colleges</h2>
+        <p>Add, edit, or remove college codes and names</p>
+    </div>
+    <div class="header-actions">
+        <button class="btn btn-primary" onclick="openAddModal()">
+            <i class="fas fa-plus"></i> Add College
+        </button>
+    </div>
+</div>
+
+<!-- Messages -->
+{% if messages %}
+<div class="messages-container mb-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+        <button type="button" class="alert-close" onclick="this.parentElement.remove()">×</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Colleges Table -->
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-university"></i> College List</h3>
+        <div class="d-flex gap-2">
+            <span class="badge badge-info" style="padding: 8px 16px; font-size: 14px;">
+                Total: {{ colleges.count }}
+            </span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table id="collegesTable">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Full Name</th>
+                        <th>Status</th>
+                        <th>Students</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for college in colleges %}
+                    <tr>
+                        <td><strong>{{ college.code }}</strong></td>
+                        <td>{{ college.name }}</td>
+                        <td>
+                            {% if college.is_active %}
+                            <span class="badge badge-success">Active</span>
+                            {% else %}
+                            <span class="badge badge-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td data-college-code="{{ college.code }}">
+                            <span class="student-count">Loading...</span>
+                        </td>
+                        <td>
+                            <button class="btn btn-info btn-sm" 
+                                    onclick="window.location.href='{% url 'manage_programs' college.id %}'">
+                                <i class="fas fa-list"></i> Programs
+                            </button>
+                            <button class="btn btn-warning btn-sm" 
+                                    onclick="openEditModal('{{ college.id }}', '{{ college.code }}', '{{ college.name }}', {{ college.is_active|yesno:'true,false' }})">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn btn-danger btn-sm delete-btn" 
+                                    data-college-id="{{ college.id }}"
+                                    data-college-code="{{ college.code }}">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No colleges found. Click "Add College" to get started.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add College Modal -->
+<div id="addCollegeModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus"></i> Add New College</h3>
+            <button class="modal-close" onclick="closeModal('addCollegeModal')">&times;</button>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="addCode">College Code *</label>
+                    <input type="text" id="addCode" name="code" class="form-control" 
+                           placeholder="e.g., CCJE, CTED" required maxlength="20"
+                           style="text-transform: uppercase;">
+                    <small class="form-text">Short code identifier (will be converted to uppercase)</small>
+                </div>
+                <div class="form-group">
+                    <label for="addName">College Name *</label>
+                    <input type="text" id="addName" name="name" class="form-control" 
+                           placeholder="e.g., College of Criminal Justice Education" required maxlength="200">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addCollegeModal')">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add College
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit College Modal -->
+<div id="editCollegeModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Edit College</h3>
+            <button class="modal-close" onclick="closeModal('editCollegeModal')">&times;</button>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" id="editCollegeId" name="college_id">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editCode">College Code *</label>
+                    <input type="text" id="editCode" name="code" class="form-control" 
+                           required maxlength="20" style="text-transform: uppercase;">
+                    <small class="form-text">Changing the code may require updating students manually</small>
+                </div>
+                <div class="form-group">
+                    <label for="editName">College Name *</label>
+                    <input type="text" id="editName" name="name" class="form-control" 
+                           required maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="editIsActive" name="is_active">
+                        Active (appears in dropdowns)
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editCollegeModal')">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteCollegeModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h3>
+            <button class="modal-close" onclick="closeModal('deleteCollegeModal')">&times;</button>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" id="deleteCollegeId" name="college_id">
+            <div class="modal-body">
+                <p id="deleteMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('deleteCollegeModal')">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete College
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.alert-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border-left: 4px solid var(--success);
+}
+
+.alert-error, .alert-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+    border-left: 4px solid var(--danger);
+}
+
+.alert-warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+    border-left: 4px solid var(--warning);
+}
+
+.alert-info {
+    background: rgba(6, 182, 212, 0.1);
+    color: var(--info);
+    border-left: 4px solid var(--info);
+}
+
+.alert-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+}
+
+.alert-close:hover {
+    opacity: 1;
+}
+</style>
+
+<script>
+// College stats passed from server
+const collegeStats = {{ college_stats|safe }};
+
+// Update student counts on page load
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-college-code]').forEach(cell => {
+        const code = cell.getAttribute('data-college-code');
+        const count = collegeStats[code] || 0;
+        cell.querySelector('.student-count').textContent = count + ' students';
+    });
+    
+    // Setup delete button handlers
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-college-id');
+            const code = this.getAttribute('data-college-code');
+            const count = collegeStats[code] || 0;
+            confirmDelete(id, code, count);
+        });
+    });
+});
+
+function openAddModal() {
+    document.getElementById('addCollegeModal').classList.add('active');
+}
+
+function openEditModal(id, code, name, isActive) {
+    document.getElementById('editCollegeId').value = id;
+    document.getElementById('editCode').value = code;
+    document.getElementById('editName').value = name;
+    document.getElementById('editIsActive').checked = isActive;
+    document.getElementById('editCollegeModal').classList.add('active');
+}
+
+function confirmDelete(id, code, studentCount) {
+    document.getElementById('deleteCollegeId').value = id;
+    const message = studentCount > 0 
+        ? 'Cannot delete <strong>' + code + '</strong> because <strong>' + studentCount + ' students</strong> are still enrolled in this college. Please reassign them first.'
+        : 'Are you sure you want to delete college <strong>' + code + '</strong>?';
+    document.getElementById('deleteMessage').innerHTML = message;
+    
+    // Disable delete button if students exist
+    const deleteBtn = document.getElementById('confirmDeleteBtn');
+    if (studentCount > 0) {
+        deleteBtn.disabled = true;
+        deleteBtn.style.opacity = '0.5';
+        deleteBtn.style.cursor = 'not-allowed';
+    } else {
+        deleteBtn.disabled = false;
+        deleteBtn.style.opacity = '1';
+        deleteBtn.style.cursor = 'pointer';
+    }
+    
+    document.getElementById('deleteCollegeModal').classList.add('active');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+// Close modal on outside click
+window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+        e.target.classList.remove('active');
+    }
+});
+
+// Auto-hide alerts after 5 seconds
+document.addEventListener('DOMContentLoaded', () => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.style.transition = 'opacity 0.3s';
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 300);
+        }, 5000);
+    });
+});
+</script>
+
+{% endblock %}

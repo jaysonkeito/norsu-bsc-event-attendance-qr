@@ -1,0 +1,148 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{% block title %}QR Attendance System{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'qrapp/img/favicon.ico' %}">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{% static 'qrapp/css/style.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        {% block sidebar %}
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="{% url 'admin_dashboard' %}" class="sidebar-logo">
+                    <div class="sidebar-logo-icon">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    <div class="sidebar-logo-text">
+                        <h1>NORSU Events Attendance</h1>
+                        <p>Management System</p>
+                    </div>
+                </a>
+                <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar" title="Toggle sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul>
+                    {% block sidebar_links %}
+                    {% with url_name=request.resolver_match.url_name %}
+                    <li>
+                        <a href="{% url 'admin_dashboard' %}#dashboard"
+                           data-section="dashboard"
+                           class="{% if url_name == 'admin_dashboard' %}active{% endif %}"
+                           onclick="return navigateDashboardSection(this);">
+                            <i class="fas fa-chart-pie"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_dashboard' %}#students"
+                           data-section="students"
+                           onclick="return navigateDashboardSection(this);">
+                            <i class="fas fa-users"></i>
+                            <span>Students</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_dashboard' %}#reports"
+                           data-section="reports"
+                           onclick="return navigateDashboardSection(this);">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_dashboard' %}#approve"
+                           data-section="approve"
+                           onclick="return navigateDashboardSection(this);">
+                            <i class="fas fa-user-check"></i>
+                            <span>Approve Users</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'manage_events' %}"
+                           class="{% if url_name == 'manage_events' %}active{% endif %}">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Events</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'manage_colleges' %}"
+                           class="{% if url_name == 'manage_colleges' or url_name == 'manage_programs' %}active{% endif %}">
+                            <i class="fas fa-university"></i>
+                            <span>Manage Colleges</span>
+                        </a>
+                    </li>
+                    {% endwith %}
+                    {% endblock %}
+                </ul>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <a href="#" class="sidebar-logout" onclick="openModal('logoutModal'); return false;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+        <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
+        {% endblock %}
+        
+        <main class="main-content">
+            <button type="button" class="sidebar-open-btn" id="sidebarOpenBtn" aria-label="Open sidebar" title="Open sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
+    
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="modal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3><i class="fas fa-sign-out-alt" style="color:#dc3545;"></i> Logout</h3>
+                <button type="button" class="modal-close" onclick="closeModal('logoutModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align:center;padding:28px 24px;">
+                <div style="width:56px;height:56px;margin:0 auto 16px;border-radius:50%;background:rgba(220,53,69,0.1);display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-sign-out-alt" style="font-size:22px;color:#dc3545;"></i>
+                </div>
+                <p style="font-size:16px;margin:0 0 8px;color:#212529;line-height:1.4;">
+                    Are you sure you want to logout?
+                </p>
+                <p style="color:#6c757d;font-size:13px;margin:0;line-height:1.45;">
+                    You will need to sign in again to access the dashboard.
+                </p>
+            </div>
+            <div class="modal-footer" style="justify-content:center;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('logoutModal')">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <a href="{% url 'logout' %}" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'qrapp/js/dashboard.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,89 @@
+{% extends "qrapp/base.html" %}
+
+{% block title %}Add New Student - Student QR System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Add New Student</h1>
+    <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Admin Dashboard</a>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Student ID -->
+        <div class="form-group">
+            <label for="id_student_id">Student ID:</label>
+            {{ form.student_id }}
+            {% if form.student_id.errors %}
+                <div class="error">{{ form.student_id.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Full Name -->
+        <div class="form-group">
+            <label for="id_name">Full Name:</label>
+            {{ form.name }}
+            {% if form.name.errors %}
+                <div class="error">{{ form.name.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Gender -->
+        <div class="form-group">
+            <label for="id_sex">Gender:</label>
+            {{ form.sex }}
+            {% if form.sex.errors %}
+                <div class="error">{{ form.sex.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- College -->
+        <div class="form-group">
+            <label for="id_college">College:</label>
+            {{ form.college }}
+            {% if form.college.errors %}
+                <div class="error">{{ form.college.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Program (Dropdown) -->
+        <div class="form-group">
+            <label for="id_Program">Program:</label>
+            {{ form.Program }}
+            {% if form.Program.errors %}
+                <div class="error">{{ form.Program.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Year -->
+        <div class="form-group">
+            <label for="id_year">Year:</label>
+            {{ form.year }}
+            {% if form.year.errors %}
+                <div class="error">{{ form.year.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Section -->
+        <div class="form-group">
+            <label for="id_section">Section:</label>
+            {{ form.section }}
+            {% if form.section.errors %}
+                <div class="error">{{ form.section.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-success">Add Student</button>
+    </form>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <a href="{% url 'generate_all_qr' %}" class="btn">View All QR Codes</a>
+        <a href="{% url 'upload_pdf' %}" class="btn btn-secondary">Import Students</a>
+
+    </div>
+</div>
+{% endblock %}
+
+

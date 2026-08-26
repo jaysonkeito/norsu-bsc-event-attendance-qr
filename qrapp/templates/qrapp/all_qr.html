@@ -1,0 +1,35 @@
+{% extends "qrapp/base.html" %}
+
+{% block title %}All QR Codes - Student QR System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>All Students QR Codes</h1>
+    
+    <div class="action-buttons">
+        <button onclick="window.print()" class="btn">Print All QR Codes</button>
+        <a href="{% url 'download_qr_pdf' %}" class="btn btn-success">Download as PDF</a>
+        <a href="{% url 'add_student' %}" class="btn">Add New Student</a>
+        <a href="{% url 'upload_pdf' %}" class="btn btn-secondary">Import Students</a>
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Admin Dashboard</a>
+        <a href="{% url 'delete_all_qr' %}"
+           onclick="return confirm('Are you sure you want to delete ALL students and QR codes?');"
+           class="btn btn-danger">
+           Delete All QR Codes
+        </a>
+
+    </div>
+    
+    <div class="qr-grid">
+        {% for item in qr_list %}
+        <div class="qr-card">
+            <p><strong>{{ item.student.name }}</strong></p>
+            <p>ID: {{ item.student.student_id }}</p>
+            <p>Year: {{ item.student.year }}</p>
+            <p>Sex: {{ item.student.sex }}</p>
+            <img src="data:image/png;base64,{{ item.qr_img }}" alt="QR Code for {{ item.student.name }}">
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
