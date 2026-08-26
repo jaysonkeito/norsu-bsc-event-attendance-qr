@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
-
+import dj_database_url
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,7 +27,7 @@ load_dotenv(BASE_DIR / ".env")
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv(
     "SECRET_KEY",
-    "django-insecure-^9j89=*z5e@s42-&(z#_+7*x4s%&hbkzz#*q8#i-#9-w$)d-#=",
+    "",
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -35,15 +35,27 @@ DEBUG = os.getenv("DEBUG", "True").strip().lower() in ("1", "true", "yes", "on")
 
 _allowed_hosts = os.getenv(
     "ALLOWED_HOSTS",
-    "*,localhost,127.0.0.1,192.168.181.2,192.168.182.90,.ngrok.io,.ngrok-free.app,.ngrok-free.dev,192.168.181.240",
+    "localhost,127.0.0.1",
 )
 ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(",") if h.strip()]
 
+if os.getenv("RENDER_EXTERNAL_HOSTNAME"):
+    ALLOWED_HOSTS.append(os.getenv("RENDER_EXTERNAL_HOSTNAME"))
+
 _csrf_trusted = os.getenv(
     "CSRF_TRUSTED_ORIGINS",
-    "https://*.ngrok-free.app,https://*.ngrok-free.dev,https://*.ngrok.app,https://*.ngrok.io",
+    "",
 )
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_trusted.split(",") if o.strip()]
+CSRF_TRUSTED_ORIGINS = [
+    o.strip()
+    for o in _csrf_trusted.split(",")
+    if o.strip()
+]
+
+if os.getenv("RENDER_EXTERNAL_HOSTNAME"):
+    CSRF_TRUSTED_ORIGINS.append(
+        f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME')}"
+    )
 
 # Application definition
 
@@ -59,6 +71,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -88,51 +101,72 @@ WSGI_APPLICATION = 'qrproject.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").lower()
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-if DB_ENGINE == "mysql":
+if DATABASE_URL:
+    # Render PostgreSQL
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.getenv("DB_NAME", "qrproject"),
-            'USER': os.getenv("DB_USER", "root"),
-            'PASSWORD': os.getenv("DB_PASSWORD", ""),
-            'HOST': os.getenv("DB_HOST", "127.0.0.1"),
-            'PORT': os.getenv("DB_PORT", "3306"),
-            'OPTIONS': {
-                'charset': 'utf8mb4',
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            },
-        }
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+        )
     }
 
-    # XAMPP ships MariaDB 10.4; Django 5.2 officially requires 10.5+.
-    from django.db.backends.mysql.features import DatabaseFeatures
-
-    @property
-    def _xampp_minimum_database_version(self):
-        if self.connection.mysql_is_mariadb:
-            return (10, 4)
-        return (8, 0, 11)
-
-    @property
-    def _xampp_can_return_columns_from_insert(self):
-        if self.connection.mysql_is_mariadb:
-            return self.connection.mysql_version >= (10, 5)
-        return self.connection.mysql_version >= (8, 0, 19)
-
-    DatabaseFeatures.minimum_database_version = _xampp_minimum_database_version
-    DatabaseFeatures.can_return_columns_from_insert = _xampp_can_return_columns_from_insert
 else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / os.getenv("SQLITE_NAME", "db.sqlite3"),
-        }
-    }
+    # Local development
+    DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").lower()
 
+    if DB_ENGINE == "mysql":
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.mysql",
+                "NAME": os.getenv("DB_NAME", "qrproject"),
+                "USER": os.getenv("DB_USER", "root"),
+                "PASSWORD": os.getenv("DB_PASSWORD", ""),
+                "HOST": os.getenv("DB_HOST", "127.0.0.1"),
+                "PORT": os.getenv("DB_PORT", "3306"),
+                "OPTIONS": {
+                    "charset": "utf8mb4",
+                    "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+                },
+            }
+        }
+
+        # XAMPP/MariaDB compatibility
+        from django.db.backends.mysql.features import DatabaseFeatures
+
+        @property
+        def _xampp_minimum_database_version(self):
+            if self.connection.mysql_is_mariadb:
+                return (10, 4)
+            return (8, 0, 11)
+
+        @property
+        def _xampp_can_return_columns_from_insert(self):
+            if self.connection.mysql_is_mariadb:
+                return self.connection.mysql_version >= (10, 5)
+            return self.connection.mysql_version >= (8, 0, 19)
+
+        DatabaseFeatures.minimum_database_version = (
+            _xampp_minimum_database_version
+        )
+
+        DatabaseFeatures.can_return_columns_from_insert = (
+            _xampp_can_return_columns_from_insert
+        )
+
+    else:
+        # Local SQLite
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": BASE_DIR / os.getenv(
+                    "SQLITE_NAME",
+                    "db.sqlite3",
+                ),
+            }
+        }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -156,14 +190,12 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE: str = 'UTC'
+TIME_ZONE = "Asia/Manila"
 
 USE_I18N = True
-
-USE_TZ = False   # force Django to store naive datetime = local Philippine time
-TIME_ZONE = "Asia/Manila"
+USE_TZ = False
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'admin_dashboard'   # after login → main dashboard
@@ -174,11 +206,20 @@ LOGOUT_REDIRECT_URL = 'login'    # after logout → back to login
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'qrapp/static'),
 ]
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
