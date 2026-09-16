@@ -1326,7 +1326,7 @@ def upload_pdf(request):
             return render(request, 'qrapp/upload_pdf.html', {'form': StudentUploadForm()})
 
         from django.utils.datastructures import MultiValueDict
-        files = MultiValueDict({'student_file': upload_file})
+        files = MultiValueDict({'student_file': [upload_file]})
         form = StudentUploadForm(request.POST, files)
         if not form.is_valid():
             error_msg = form.errors.get('student_file', ['Invalid file upload'])[0]
