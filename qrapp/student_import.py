@@ -150,15 +150,81 @@ def import_students_from_rows(rows, column_map=None):
     return created, skipped
 
 
+def parse_pdf_text_row(line):
+    tokens = safe_strip(line).split()
+    if len(tokens) < 5:
+        return None
+
+    sex_index = next(
+        (index for index, token in enumerate(tokens) if token.lower() in {"m", "f", "male", "female"}),
+        None,
+    )
+    if sex_index is None or sex_index < 2:
+        return None
+
+    year_index = next(
+        (
+            index
+            for index in range(sex_index + 1, len(tokens))
+            if re.fullmatch(r"\d{1,2}", tokens[index])
+        ),
+        None,
+    )
+    if year_index is None or year_index <= sex_index + 1:
+        return None
+
+    # A row number may precede the student ID in the requested PDF format.
+    id_index = 1 if tokens[0].isdigit() and sex_index >= 3 else 0
+    if id_index >= sex_index - 1:
+        return None
+
+    return [
+        tokens[id_index],
+        " ".join(tokens[id_index + 1:sex_index]),
+        tokens[sex_index],
+        " ".join(tokens[sex_index + 1:year_index]),
+        tokens[year_index],
+        " ".join(tokens[year_index + 1:]),
+    ]
+
+
 def iter_pdf_rows(file_path):
     rows = []
+    column_map = None
     with pdfplumber.open(file_path) as pdf:
         for page in pdf.pages:
             table = page.extract_table()
             if not table:
                 continue
-            rows.extend(table[1:] if is_header_row(table[0]) else table)
-    return rows, None
+            if is_header_row(table[0]):
+                if column_map is None:
+                    column_map = build_column_map(table[0])
+                rows.extend(table[1:])
+            else:
+                rows.extend(table)
+
+        if rows:
+            return rows, column_map
+
+        text_column_map = {
+            "student_id": 0,
+            "name": 1,
+            "sex": 2,
+            "program": 3,
+            "year": 4,
+            "major": 5,
+        }
+        for page in pdf.pages:
+            text = page.extract_text() or ""
+            for line in text.splitlines():
+                if is_header_row(line.split()) or normalize_header(line).startswith("generated"):
+                    continue
+                parsed_row = parse_pdf_text_row(line)
+                if parsed_row:
+                    rows.append(parsed_row)
+        if rows:
+            return rows, text_column_map
+    return rows, column_map
 
 
 def iter_csv_rows(file_path):
