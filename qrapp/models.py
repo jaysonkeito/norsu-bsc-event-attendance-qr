@@ -58,7 +58,7 @@ class Student(models.Model):
         blank=True,
     )
     year = models.IntegerField()
-    section = models.CharField(max_length=10)
+    major = models.CharField(max_length=200)
 
     class Meta:
         ordering = ["name", "student_id"]

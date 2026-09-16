@@ -310,7 +310,7 @@ class Dashboard {
                 <td>${this.escapeHtml(student.college)}</td>
                 <td>${this.escapeHtml(student.program)}</td>
                 <td>${student.year}</td>
-                <td>${this.escapeHtml(student.section)}</td>
+                <td>${this.escapeHtml(student.major)}</td>
                 <td>
                     <a href="/edit_student/${student.id}/" class="btn btn-warning btn-sm">
                         <i class="fas fa-edit"></i> Edit
@@ -345,7 +345,7 @@ class Dashboard {
                 <td>${this.escapeHtml(record.college)}</td>
                 <td>${this.escapeHtml(record.program)}</td>
                 <td>${record.year}</td>
-                <td>${this.escapeHtml(record.section)}</td>
+                <td>${this.escapeHtml(record.major)}</td>
                 <td><span class="badge badge-${this.getStatusClass(record.status)}">${record.status}</span></td>
                 <td>${record.date || '-'}</td>
                 <td>${record.timestamp || '-'}</td>
@@ -374,7 +374,7 @@ class Dashboard {
                 <td>${this.escapeHtml(report.college)}</td>
                 <td>${this.escapeHtml(report.program)}</td>
                 <td>${report.year}</td>
-                <td>${this.escapeHtml(report.section)}</td>
+                <td>${this.escapeHtml(report.major)}</td>
                 <td>${report.time_in || '-'}</td>
                 <td>${report.time_out || '-'}</td>
                 <td>${report.date || '-'}</td>
@@ -768,7 +768,7 @@ function applyPrintOptions() {
     printContent += '<table>';
     printContent += '<thead><tr>';
     printContent += '<th>ID</th><th>Name</th><th>College</th><th>Program</th>';
-    printContent += '<th>Year</th><th>Section</th><th>Time In</th><th>Time Out</th>';
+    printContent += '<th>Year</th><th>Major</th><th>Time In</th><th>Time Out</th>';
     printContent += '<th>Date</th><th>Status</th>';
     printContent += '</tr></thead><tbody>';
 
@@ -873,7 +873,7 @@ function applyExportOptions() {
 
     // Add column headers if enabled
     if (filters.includeHeaders) {
-        csvContent += 'ID,Name,College,Program,Year,Section,Time In,Time Out,Date,Status\n';
+        csvContent += 'ID,Name,College,Program,Year,Major,Time In,Time Out,Date,Status\n';
     }
 
     // Add data rows

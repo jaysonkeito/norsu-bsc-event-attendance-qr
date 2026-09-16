@@ -246,7 +246,7 @@
                             <th>College</th>
                             <th>Program</th>
                             <th>Year</th>
-                            <th>Section</th>
+                            <th>Major</th>
                             <th>Status</th>
                             <th>Date</th>
                             <th>Time</th>
@@ -260,7 +260,7 @@
                             <td>{{ record.student.college_code }}</td>
                             <td>{{ record.student.program_code }}</td>
                             <td>{{ record.student.year }}</td>
-                            <td>{{ record.student.section }}</td>
+                            <td>{{ record.student.major }}</td>
                             <td>
                                 <span class="badge badge-{% if record.status == 'IN' %}info{% else %}warning{% endif %}">
                                     {{ record.status }}
@@ -379,7 +379,7 @@
                             <th>College</th>
                             <th>Program</th>
                             <th>Year</th>
-                            <th>Section</th>
+                            <th>Major</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -391,10 +391,10 @@
                             <td>{{ data.student.college_code }}</td>
                             <td>{{ data.student.program_code }}</td>
                             <td>{{ data.student.year }}</td>
-                            <td>{{ data.student.section }}</td>
+                            <td>{{ data.student.major }}</td>
                             <td>
                                 <div class="table-actions">
-                                    <button type="button" class="btn btn-warning btn-sm" onclick="openEditStudentModal({{ data.student.id }}, '{{ data.student.student_id }}', '{{ data.student.name }}', '{{ data.student.sex }}', '{{ data.student.college_code }}', '{{ data.student.program_code }}', {{ data.student.year }}, '{{ data.student.section }}')">
+                                    <button type="button" class="btn btn-warning btn-sm" onclick="openEditStudentModal({{ data.student.id }}, '{{ data.student.student_id }}', '{{ data.student.name }}', '{{ data.student.sex }}', '{{ data.student.college_code }}', '{{ data.student.program_code }}', {{ data.student.year }}, '{{ data.student.major }}')">
                                         <i class="fas fa-edit"></i> Edit
                                     </button>
                                     <a href="{% url 'delete_student' data.student.id %}" class="btn btn-danger btn-sm"
@@ -538,7 +538,7 @@
                             <th>College</th>
                             <th>Program</th>
                             <th>Year</th>
-                            <th>Section</th>
+                            <th>Major</th>
                             <th>Time In</th>
                             <th>Time Out</th>
                             <th>Date</th>
@@ -553,7 +553,7 @@
                             <td>{{ data.student.college_code }}</td>
                             <td>{{ data.student.program_code }}</td>
                             <td>{{ data.student.year }}</td>
-                            <td>{{ data.student.section }}</td>
+                            <td>{{ data.student.major }}</td>
                             <td>{{ data.time_in|date:"h:i A"|default:"-" }}</td>
                             <td>{{ data.time_out|date:"h:i A"|default:"-" }}</td>
                             <td>{{ data.date|date:"d/m/Y"|default:"-" }}</td>
@@ -824,8 +824,8 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="addStudentSection">Section *</label>
-                    <input type="text" id="addStudentSection" class="form-control" placeholder="Enter section" required>
+                    <label for="addStudentMajor">Major *</label>
+                    <input type="text" id="addStudentMajor" class="form-control" placeholder="Enter major" required>
                 </div>
             </form>
         </div>
@@ -864,7 +864,7 @@
                     <ul>
                         <li>Maximum file size: 10MB</li>
                         <li>CSV/Excel should include a header row (recommended)</li>
-                        <li>Columns: Student ID, Name, Gender, College, Program, Year, Section</li>
+                        <li>Columns: No. (auto increment), Student No./id, Name, Sex, Course, Year, Major</li>
                         <li>PDF files should contain a readable student table</li>
                     </ul>
                 </div>
@@ -947,8 +947,8 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="editStudentSection">Section *</label>
-                    <input type="text" id="editStudentSection" class="form-control" required>
+                    <label for="editStudentMajor">Major *</label>
+                    <input type="text" id="editStudentMajor" class="form-control" required>
                 </div>
             </form>
         </div>
@@ -1148,8 +1148,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="exportStudentsSection">Section</label>
-                        <input type="text" id="exportStudentsSection" class="form-control" placeholder="All sections">
+                        <label for="exportStudentsMajor">Major</label>
+                        <input type="text" id="exportStudentsMajor" class="form-control" placeholder="All majors">
                     </div>
                 </div>
 
@@ -1239,8 +1239,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="qrSection">Section</label>
-                        <input type="text" id="qrSection" class="form-control" placeholder="All sections">
+                        <label for="qrMajor">Major</label>
+                        <input type="text" id="qrMajor" class="form-control" placeholder="All majors">
                     </div>
                 </div>
 
@@ -1614,10 +1614,10 @@ function submitAddStudent() {
     const college = document.getElementById('addStudentCollege').value;
     const program = document.getElementById('addStudentProgram').value;
     const year = document.getElementById('addStudentYear').value;
-    const section = document.getElementById('addStudentSection').value.trim();
+    const major = document.getElementById('addStudentMajor').value.trim();
     
     // Validation
-    if (!studentId || !studentName || !gender || !college || !program || !year || !section) {
+    if (!studentId || !studentName || !gender || !college || !program || !year || !major) {
         alert('Please fill in all required fields');
         return;
     }
@@ -1630,7 +1630,7 @@ function submitAddStudent() {
         college: college,
         program: program,
         year: year,
-        section: section,
+        major: major,
         csrfmiddlewaretoken: "{{ csrf_token }}"
     }, function(response) {
         if (response.success) {
@@ -1723,13 +1723,13 @@ function getQrFilterParams() {
     const college = document.getElementById('qrCollege')?.value || '';
     const program = document.getElementById('qrProgram')?.value || '';
     const year = document.getElementById('qrYear')?.value || '';
-    const section = document.getElementById('qrSection')?.value.trim() || '';
+    const major = document.getElementById('qrMajor')?.value.trim() || '';
     const gender = document.getElementById('qrGender')?.value || '';
 
     if (college) params.append('college', college);
     if (program) params.append('program', program);
     if (year) params.append('year', year);
-    if (section) params.append('section', section);
+    if (major) params.append('major', major);
     if (gender) params.append('gender', gender);
     return params;
 }
@@ -1768,7 +1768,7 @@ function renderQrCodesGrid(qrList) {
             <strong>${escapeHtml(item.name)}</strong>
             <small>${escapeHtml(item.student_id)}</small>
             <small>${escapeHtml(item.college)} · ${escapeHtml(item.program)}</small>
-            <small>Year ${escapeHtml(String(item.year))} · ${escapeHtml(item.section || '-')}</small>
+            <small>Year ${escapeHtml(String(item.year))} · ${escapeHtml(item.major || '-')}</small>
             <img src="data:image/png;base64,${item.qr_img}" alt="QR for ${escapeHtml(item.student_id)}">
         </div>
     `).join('');
@@ -1795,7 +1795,7 @@ function openQrCodesModal() {
         document.getElementById('qrYear').value = year.value;
     }
 
-    document.getElementById('qrSection').value = '';
+    document.getElementById('qrMajor').value = '';
     document.getElementById('qrGender').value = '';
     document.getElementById('qrCodesGrid').innerHTML = '';
     document.getElementById('qrCodesEmpty').style.display = 'none';
@@ -1906,7 +1906,7 @@ function applyExportStudents() {
     const college = document.getElementById('exportStudentsCollege')?.value || '';
     const program = document.getElementById('exportStudentsProgram')?.value || '';
     const year = document.getElementById('exportStudentsYear')?.value || '';
-    const section = document.getElementById('exportStudentsSection')?.value.trim() || '';
+    const major = document.getElementById('exportStudentsMajor')?.value.trim() || '';
     const gender = document.getElementById('exportStudentsGender')?.value || '';
     const format = document.getElementById('exportStudentsFormat')?.value || 'csv';
     const includeHeaders = document.getElementById('exportStudentsIncludeHeaders')?.checked;
@@ -1914,7 +1914,7 @@ function applyExportStudents() {
     if (college) params.append('college', college);
     if (program) params.append('program', program);
     if (year) params.append('year', year);
-    if (section) params.append('section', section);
+    if (major) params.append('major', major);
     if (gender) params.append('gender', gender);
     params.append('format', format);
     params.append('include_headers', includeHeaders ? '1' : '0');
@@ -1956,7 +1956,7 @@ function applyExportStudents() {
         });
 }
 
-function openEditStudentModal(id, studentId, name, sex, college, program, year, section) {
+function openEditStudentModal(id, studentId, name, sex, college, program, year, major) {
     document.getElementById('editStudentDbId').value = id;
     document.getElementById('editStudentId').value = studentId;
     document.getElementById('editStudentName').value = name;
@@ -1970,7 +1970,7 @@ function openEditStudentModal(id, studentId, name, sex, college, program, year, 
     }, 100);
     
     document.getElementById('editStudentYear').value = year;
-    document.getElementById('editStudentSection').value = section;
+    document.getElementById('editStudentMajor').value = major;
     
     document.getElementById('editStudentModal').classList.add('active');
 }
@@ -1982,9 +1982,9 @@ function submitEditStudent() {
     const college = document.getElementById('editStudentCollege').value;
     const program = document.getElementById('editStudentProgram').value;
     const year = document.getElementById('editStudentYear').value;
-    const section = document.getElementById('editStudentSection').value.trim();
+    const major = document.getElementById('editStudentMajor').value.trim();
     
-    if (!name || !sex || !college || !program || !year || !section) {
+    if (!name || !sex || !college || !program || !year || !major) {
         alert('Please fill in all required fields');
         return;
     }
@@ -1995,7 +1995,7 @@ function submitEditStudent() {
         college: college,
         program: program,
         year: year,
-        section: section,
+        major: major,
         csrfmiddlewaretoken: "{{ csrf_token }}"
     }, function(response) {
         if (response.success) {

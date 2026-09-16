@@ -35,8 +35,8 @@ def build_qr_data(student):
         f"Program: {program}\n"
         f"Year: {student.year}\n"
     )
-    if getattr(student, "section", None) and student.section != "NA":
-        qr_data += f"Section: {student.section}"
+    if getattr(student, "major", None) and student.major != "NA":
+        qr_data += f"Major: {student.major}"
     return qr_data
 
 
@@ -123,7 +123,7 @@ def generate_qr_with_label(student):
 
 def build_qr_filename(params, extension):
     parts = ["qrcodes"]
-    for key in ("college", "program", "year", "section"):
+    for key in ("college", "program", "year", "major"):
         value = (params.get(key) or "").strip()
         if value:
             safe = "".join(ch if ch.isalnum() else "_" for ch in str(value))
@@ -143,7 +143,7 @@ def serialize_qr_list(students):
                     "college": student.college_code,
                     "program": student.program_code,
                     "year": student.year,
-                    "section": student.section,
+                    "major": student.major,
                     "sex": student.sex,
                     "qr_img": build_qr_preview_base64(student),
                 }

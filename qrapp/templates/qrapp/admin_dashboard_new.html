@@ -193,7 +193,7 @@
                             <th>College</th>
                             <th>Program</th>
                             <th>Year</th>
-                            <th>Section</th>
+                            <th>Major</th>
                             <th>Status</th>
                             <th>Date</th>
                             <th>Time</th>
@@ -207,7 +207,7 @@
                             <td>{{ record.student.college }}</td>
                             <td>{{ record.student.program }}</td>
                             <td>{{ record.student.year }}</td>
-                            <td>{{ record.student.section }}</td>
+                            <td>{{ record.student.major }}</td>
                             <td>
                                 <span class="badge badge-{% if record.status == 'IN' %}info{% else %}warning{% endif %}">
                                     {{ record.status }}
@@ -247,7 +247,7 @@
                             <th>College</th>
                             <th>Program</th>
                             <th>Year</th>
-                            <th>Section</th>
+                            <th>Major</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -259,7 +259,7 @@
                             <td>{{ data.student.college }}</td>
                             <td>{{ data.student.program }}</td>
                             <td>{{ data.student.year }}</td>
-                            <td>{{ data.student.section }}</td>
+                            <td>{{ data.student.major }}</td>
                             <td>
                                 <a href="{% url 'edit_student' data.student.id %}" class="btn btn-warning btn-sm">
                                     <i class="fas fa-edit"></i> Edit
@@ -306,7 +306,7 @@
                             <th>College</th>
                             <th>Program</th>
                             <th>Year</th>
-                            <th>Section</th>
+                            <th>Major</th>
                             <th>Time In</th>
                             <th>Time Out</th>
                             <th>Date</th>
@@ -321,7 +321,7 @@
                             <td>{{ data.student.college }}</td>
                             <td>{{ data.student.program }}</td>
                             <td>{{ data.student.year }}</td>
-                            <td>{{ data.student.section }}</td>
+                            <td>{{ data.student.major }}</td>
                             <td>{{ data.time_in|date:"h:i A"|default:"-" }}</td>
                             <td>{{ data.time_out|date:"h:i A"|default:"-" }}</td>
                             <td>{{ data.date|date:"d/m/Y"|default:"-" }}</td>

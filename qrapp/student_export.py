@@ -14,7 +14,7 @@ STUDENT_EXPORT_HEADERS = [
     "College",
     "Program",
     "Year",
-    "Section",
+    "Major",
 ]
 
 
@@ -24,7 +24,7 @@ def filter_students_queryset(params):
     college = (params.get("college") or "").strip()
     program = (params.get("program") or "").strip()
     year = (params.get("year") or "").strip()
-    section = (params.get("section") or "").strip()
+    major = (params.get("major") or "").strip()
     gender = (params.get("gender") or "").strip()
     search = (params.get("search") or "").strip()
 
@@ -34,8 +34,8 @@ def filter_students_queryset(params):
         students = students.filter(program__code=program)
     if year:
         students = students.filter(year=year)
-    if section:
-        students = students.filter(section__iexact=section)
+    if major:
+        students = students.filter(major__iexact=major)
     if gender:
         gender_upper = gender.upper()
         if gender_upper in ("M", "MALE"):
@@ -47,7 +47,7 @@ def filter_students_queryset(params):
             Q(name__icontains=search)
             | Q(student_id__icontains=search)
             | Q(program__code__icontains=search)
-            | Q(section__icontains=search)
+            | Q(major__icontains=search)
         )
 
     return students.order_by("name", "student_id")
@@ -61,13 +61,13 @@ def student_row(student):
         student.college_code,
         student.program_code,
         student.year,
-        student.section,
+        student.major,
     ]
 
 
 def build_export_filename(params, extension):
     parts = ["students"]
-    for key in ("college", "program", "year", "section"):
+    for key in ("college", "program", "year", "major"):
         value = (params.get(key) or "").strip()
         if value:
             safe = "".join(ch if ch.isalnum() else "_" for ch in str(value))

@@ -1700,7 +1700,7 @@
                                 <th>College</th>
                                 <th>Program</th>
                                 <th>Year</th>
-                                <th>Section</th>
+                                <th>Major</th>
                                 <th>Status</th>
                                 <th>Date</th>
                                 <th>Time</th>
@@ -1714,7 +1714,7 @@
                                 <td>{{ record.student.college }}</td>
                                 <td>{{ record.student.program }}</td>
                                 <td>{{ record.student.year }}</td>
-                                <td>{{ record.student.section }}</td>
+                                <td>{{ record.student.major }}</td>
                                 <td>{{ record.status }}</td>
                                 <td>{{ record.timestamp|date:"d/m/Y" }}</td>
                                 <td>{{ record.timestamp|date:"h:i:s A" }}</td>
@@ -1751,7 +1751,7 @@
                                 <th data-sort="college">College <i class="fas fa-sort"></i></th>
                                 <th data-sort="Program">Program <i class="fas fa-sort"></i></th>
                                 <th data-sort="year">Year <i class="fas fa-sort"></i></th>
-                                <th data-sort="section">Section <i class="fas fa-sort"></i></th>
+                                <th data-sort="major">Major <i class="fas fa-sort"></i></th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -1763,7 +1763,7 @@
                                 <td>{{ data.student.college }}</td>
                                 <td>{{ data.student.program }}</td>
                                 <td>{{ data.student.year }}</td>
-                                <td>{{ data.student.section }}</td>
+                                <td>{{ data.student.major }}</td>
                                 <td>
                                     <a href="{% url 'edit_student' data.student.id %}" class="btn btn-warning btn-sm">
                                         <i class="fas fa-edit"></i> Edit
@@ -1825,7 +1825,7 @@
                                 <th>College</th>
                                 <th>Program
                                 <th>Year</th>
-                                <th>Section</th>
+                                <th>Major</th>
                                 <th>Time In</th>
                                 <th>Time Out</th>
                                 <th>Date</th>
@@ -1840,7 +1840,7 @@
                                 <td>{{ data.student.college }}</td>
                                 <td>{{ data.student.program }}</td>
                                 <td>{{ data.student.year }}</td>
-                                <td>{{ data.student.section }}</td>
+                                <td>{{ data.student.major }}</td>
                                 <td>
                                     {% if data.time_in %}
                                     {{ data.time_in|date:"h:i:s A" }}
@@ -2294,7 +2294,7 @@
                 <td>${student.college}</td>
                 <td>${student.program}</td>
                 <td>${student.year}</td>
-                <td>${student.section}</td>
+                <td>${student.major}</td>
                 <td>
                     <a href="/edit_student/${student.id}/" class="btn btn-warning btn-sm">
                         <i class="fas fa-edit"></i> Edit
@@ -2332,7 +2332,7 @@
                 <td>${record.college}</td>
                 <td>${record.program}</td>
                 <td>${record.year}</td>
-                <td>${record.section}</td>
+                <td>${record.major}</td>
                 <td>${record.status}</td>
                 <td>${record.date || '-'}</td>
                 <td>${record.timestamp}</td>
@@ -2362,7 +2362,7 @@
                 <td>${report.college}</td>
                 <td>${report.program}</td>
                 <td>${report.year}</td>
-                <td>${report.section}</td>
+                <td>${report.major}</td>
                 <td>${report.time_in || '-'}</td>
                 <td>${report.time_out || '-'}</td>
                 <td>${report.date || '-'}</td>

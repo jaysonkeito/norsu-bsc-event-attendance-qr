@@ -24,7 +24,7 @@ class StudentForm(forms.ModelForm):
 
     class Meta:
         model = Student
-        fields = ["student_id", "name", "sex", "college", "program", "year", "section"]
+        fields = ["student_id", "name", "sex", "college", "program", "year", "major"]
         widgets = {
             "student_id": forms.TextInput(attrs={"placeholder": "Enter student ID"}),
             "name": forms.TextInput(attrs={"placeholder": "Enter full name"}),
@@ -38,7 +38,7 @@ class StudentForm(forms.ModelForm):
             "college": forms.Select(attrs={"class": "form-control"}),
             "program": forms.Select(attrs={"class": "form-control"}),
             "year": forms.NumberInput(attrs={"placeholder": "Enter year", "min": "1", "max": "5"}),
-            "section": forms.TextInput(attrs={"placeholder": "Enter section"}),
+            "major": forms.TextInput(attrs={"placeholder": "Enter major"}),
         }
 
 

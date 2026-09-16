@@ -516,11 +516,12 @@ def get_students_data(request):
         student_data = [
             {
                 "id": s.id,
+                
                 "student_id": s.student_id,
                 "name": s.name,
                 "program": s.program_code,
                 "year": s.year,
-                "section": s.section,
+                "major": s.major,
                 # add other fields if needed
             }
             for s in students
@@ -539,7 +540,7 @@ def get_students_data(request):
         "name": student.name,
         "program": student.program_code,
         "year": student.year,
-        "section": student.section,
+        "major": student.major,
     }
     return JsonResponse({"success": True, "data": data})
 
@@ -709,7 +710,7 @@ def edit_student(request, student_id):
                 student.college = college
                 student.program = program
                 student.year = request.POST.get("year")
-                student.section = request.POST.get("section")
+                student.major = request.POST.get("major")
                 student.save()
 
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -853,7 +854,7 @@ def ajax_student_list(request):
                 'college': student.college_code,
                 'program': student.program_code,
                 'year': student.year,
-                'section': student.section,
+                'major': student.major,
                 'time_in': time_in.strftime("%I:%M:%S %p")if time_in else None,
                 'time_out': time_out.strftime("%H:%M:%S") if time_out else None,
                 'status': status
@@ -980,7 +981,7 @@ def ajax_dashboard_data(request):
                 'college': record.student.college_code,
                 'program': record.student.program_code,
                 'year': record.student.year,
-                'section': record.student.section,
+                'major': record.student.major,
                 'status': record.status,
                 'date': record.timestamp.strftime("%Y-%m-%d"),
                 'timestamp': record.timestamp.strftime("%I:%M:%S %p")
@@ -1170,7 +1171,7 @@ def ajax_reports_data(request):
                 'college': student.college_code,
                 'program': student.program_code,
                 'year': student.year,
-                'section': student.section,
+                'major': student.major,
                 'time_in': time_in.strftime("%I:%M:%S %p") if time_in else None,
                 'time_out': time_out.strftime("%I:%M:%S %p") if time_out else None,
                 'date': attendance_date.strftime("%Y-%m-%d") if attendance_date else None,
@@ -1419,7 +1420,7 @@ def add_student(request):
                     college=college,
                     program=program,
                     year=request.POST.get('year'),
-                    section=request.POST.get('section')
+                    major=request.POST.get('major')
                 )
                 student.save()
                 return JsonResponse({'success': True, 'message': 'Student added successfully!'})

@@ -1,16 +1,26 @@
 import csv
 import os
+import re
 
 import pdfplumber
 
 HEADER_ALIASES = {
-    "student_id": ["student id", "id number", "id", "student_id", "student no", "student number", "id no"],
+    "student_id": [
+        "student id",
+        "student no id",
+        "student no",
+        "id number",
+        "id",
+        "student_id",
+        "student number",
+        "id no",
+    ],
     "name": ["name", "full name", "student name"],
     "sex": ["sex", "gender"],
     "college": ["college"],
     "program": ["program", "course"],
     "year": ["year", "year level", "yr", "yearlevel"],
-    "section": ["section", "sec"],
+    "major": ["major", "section", "sec"],
 }
 
 SKIP_ROW_MARKERS = {"student id", "id number", "generated", "id no", "student no"}
@@ -24,7 +34,9 @@ def safe_strip(value, default=""):
 
 
 def normalize_header(value):
-    return safe_strip(value).lower()
+    normalized = safe_strip(value).lower().replace("_", " ")
+    normalized = re.sub(r"[./]+", " ", normalized)
+    return re.sub(r"\s+", " ", normalized).strip()
 
 
 def is_header_row(row):
@@ -74,15 +86,16 @@ def parse_student_row(row, column_map=None):
         college = get_field("college", "CAS")
         program = get_field("program")
         year = get_field("year", "0")
-        section = get_field("section", "NA")
+        major = get_field("major", "NA")
     else:
-        student_id = safe_strip(row[0], "0")
-        name = safe_strip(row[1]) if len(row) > 1 else ""
-        sex = safe_strip(row[2]) if len(row) > 2 else ""
-        college = safe_strip(row[3], "CAS") if len(row) > 3 else "CAS"
+        # The first column is a spreadsheet row number, not the student ID.
+        student_id = safe_strip(row[1], "0") if len(row) > 1 else "0"
+        name = safe_strip(row[2]) if len(row) > 2 else ""
+        sex = safe_strip(row[3]) if len(row) > 3 else ""
+        college = "CAS"
         program = safe_strip(row[4]) if len(row) > 4 else ""
         year = safe_strip(row[5], "0") if len(row) > 5 else "0"
-        section = safe_strip(row[6], "NA") if len(row) > 6 else "NA"
+        major = safe_strip(row[6], "NA") if len(row) > 6 else "NA"
 
     if student_id in ("0", "NA", "") or name in ("NA", ""):
         return None
@@ -99,7 +112,7 @@ def parse_student_row(row, column_map=None):
         "college": college,
         "program": program,
         "year": year_int,
-        "section": section,
+        "major": major,
     }
 
 
@@ -126,7 +139,7 @@ def import_students_from_rows(rows, column_map=None):
                 "college": college,
                 "program": program,
                 "year": data["year"],
-                "section": data["section"],
+                "major": data["major"],
             },
         )
         if was_created:
