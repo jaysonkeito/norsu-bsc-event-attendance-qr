@@ -874,7 +874,7 @@
             <button class="btn btn-secondary" onclick="closeModal('uploadStudentsModal')">
                 <i class="fas fa-times"></i> Cancel
             </button>
-            <button class="btn btn-primary" onclick="submitUploadStudents()">
+            <button class="btn btn-primary" onclick="submitUploadStudents(event)">
                 <i class="fas fa-upload"></i> Upload & Process
             </button>
         </div>
@@ -1652,7 +1652,7 @@ function submitAddStudent() {
     });
 }
 
-function submitUploadStudents() {
+function submitUploadStudents(event) {
     const fileInput = document.getElementById('studentFile');
     const file = fileInput.files[0];
     const allowedExtensions = ['.pdf', '.csv', '.xlsx', '.xlsm'];
